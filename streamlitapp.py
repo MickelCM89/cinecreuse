@@ -1,0 +1,270 @@
+import streamlit as st
+import pandas as pd
+import base64
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import MinMaxScaler
+from googleapiclient.discovery import build
+import numpy as np
+
+# ── Configuration de la page ──────────────────────────
+st.set_page_config(
+    page_title="CINÉCREUSE",
+    page_icon="🎬",
+    layout="wide"
+)
+
+# ── YouTube API ───────────────────────────────────────
+YOUTUBE_API_KEY = 'AIzaSyDkKZie4PBfLPnKsfo9hSjMluJOYjNLoS8 '
+
+def get_trailer(titre):
+    try:
+        youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
+        request = youtube.search().list(
+            q=f"{titre} trailer français",
+            part='snippet',
+            maxResults=1,
+            type='video'
+        )
+        response = request.execute()
+        if response['items']:
+            video_id = response['items'][0]['id']['videoId']
+            return f"https://www.youtube.com/embed/{video_id}"
+        return None
+    except:
+        return None
+
+# ── Charger les données + ML ──────────────────────────
+@st.cache_data
+def charger_données():
+    df = pd.read_csv('dataset_final_tmdb_v2.1.csv', low_memory=False)
+    df_films = df.drop_duplicates(subset=['tconst'])[[
+        'tconst', 'primaryTitle', 'titre', 'startYear', 'genres',
+        'averageRating', 'numVotes', 'overview',
+        'poster_path', 'budget', 'revenue',
+        'production_countries', 'runtimeMinutes'
+    ]].reset_index(drop=True)
+    return df_films
+
+@st.cache_resource
+def construire_modele(df_films):
+    df_films = df_films.copy()
+    df_films['genres'] = df_films['genres'].fillna('')
+    df_films['overview'] = df_films['overview'].fillna('')
+    df_films['startYear'] = pd.to_numeric(
+        df_films['startYear'], errors='coerce').fillna(0)
+    df_films['contenu'] = (
+        df_films['genres'] + ' ' +
+        df_films['genres'] + ' ' +
+        df_films['genres'] + ' ' +
+        df_films['genres'] + ' ' +
+        df_films['overview']
+    )
+    tfidf = TfidfVectorizer(stop_words='english', min_df=2, max_features=5000)
+    tfidf_matrix = tfidf.fit_transform(df_films['contenu'])
+    cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+    scaler = MinMaxScaler()
+    df_films['note_norm'] = scaler.fit_transform(
+        df_films[['averageRating']].fillna(0))
+    return cosine_sim, df_films
+
+df_films = charger_données()
+cosine_sim, df_ml = construire_modele(df_films)
+
+# ── Fonction recommander ──────────────────────────────
+def recommander(titre, n=5):
+    resultats = df_ml[
+        df_ml['titre'].str.contains(titre, case=False, na=False) |
+        df_ml['primaryTitle'].str.contains(titre, case=False, na=False)
+    ]
+    if resultats.empty:
+        return None
+    film = resultats.iloc[0]
+    idx = film.name
+    scores_genres = cosine_sim[idx]
+    scores_notes = df_ml['note_norm'].values
+    scores_final = 0.8 * scores_genres + 0.2 * scores_notes
+    scores = list(enumerate(scores_final))
+    scores = sorted(scores, key=lambda x: x[1], reverse=True)
+    scores = [s for s in scores if s[0] != idx][:n]
+    indices = [i[0] for i in scores]
+    return df_ml.iloc[indices]
+
+# ── CSS ───────────────────────────────────────────────
+with open("logo3.png", "rb") as f:
+    logo_base64 = base64.b64encode(f.read()).decode()
+with open("20.jpg", "rb") as f:
+    fondo_base64 = base64.b64encode(f.read()).decode()
+
+st.markdown(f"""
+    <style>
+    .stApp {{ background-color: #606060; }}
+    .stApp::before {{
+        content: "";
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background-image: url("data:image/jpg;base64,{fondo_base64}");
+        background-size: 500px 500px;
+        background-position: center;
+        background-attachment: fixed;
+        opacity: 0.05;
+        z-index: 0;
+    }}
+    .stApp > * {{ position: relative; z-index: 1; }}
+    [data-testid="stImage"] img {{
+        border-radius: 20px !important;
+        object-fit: cover;
+    }}
+    iframe {{
+        border-radius: 20px !important;
+        overflow: hidden;
+    }}
+    .logo-circulaire {{
+        width: 150px; height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+        animation: girar 8s linear infinite;
+    }}
+    @keyframes girar {{
+        from {{ transform: rotate(0deg); }}
+        to   {{ transform: rotate(360deg); }}
+    }}
+    </style>
+""", unsafe_allow_html=True)
+
+# ── En-tête ───────────────────────────────────────────
+col_logo, col_titre = st.columns([1, 8])
+with col_logo:
+    st.markdown(f"""
+        <img src="data:image/png;base64,{logo_base64}" class="logo-circulaire">
+    """, unsafe_allow_html=True)
+with col_titre:
+    st.markdown("""
+        <h1 style="
+            font-size: 90px;
+            font-weight: 900;
+            letter-spacing: 6px;
+            background: linear-gradient(45deg, #c0392b, #e74c3c, #e67e22, #f39c12, #f1c40f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0;
+        ">CINÉCREUSE</h1>
+    """, unsafe_allow_html=True)
+
+# ── Zone de recherche ─────────────────────────────────
+st.markdown("<br>", unsafe_allow_html=True)
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    film_input = st.text_input("", placeholder="🔍 Rechercher un film...",
+                                label_visibility="collapsed")
+
+# ── Résultats de recherche ────────────────────────────
+if film_input:
+    resultats = df_films[
+        df_films['titre'].str.contains(film_input, case=False, na=False) |
+        df_films['primaryTitle'].str.contains(film_input, case=False, na=False)
+    ]
+    if not resultats.empty:
+        st.success(f"{len(resultats)} film(s) trouvé(s) pour : **{film_input}**")
+        st.markdown("### 🎬 Résultats de recherche")
+        for _, film in resultats.iterrows():
+            col1, col2 = st.columns([1, 4])
+            with col1:
+                poster_url = f"https://image.tmdb.org/t/p/w500{film['poster_path']}"
+                st.image(poster_url, width=150)
+            with col2:
+                st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
+                st.markdown(f"**Genres :** {film['genres']}")
+                st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
+                st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
+                st.markdown(f"**Synopsis :** {film['overview']}")
+                # ── Trailer ───────────────────────────
+                trailer_url = get_trailer(film['titre'])
+                if trailer_url:
+                    st.markdown("**🎬 Bande-annonce :**")
+                    st.components.v1.iframe(trailer_url, height=450)
+                if st.button("🍿 Voir les recommandations",
+                             key=f"reco_recherche_{film['tconst']}"):
+                    recommandations = recommander(film['titre'])
+                    if recommandations is not None:
+                        cols = st.columns(5)
+                        for i, (_, row) in enumerate(recommandations.iterrows()):
+                            with cols[i]:
+                                poster_url = f"https://image.tmdb.org/t/p/w500{row['poster_path']}"
+                                st.image(poster_url, use_container_width=True)
+                                with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
+                                    st.markdown(f"**Année :** {int(row['startYear'])}")
+                                    st.markdown(f"**Genres :** {row['genres']}")
+                                    st.markdown(f"**Synopsis :** {row['overview']}")
+            st.divider()
+    else:
+        st.warning("⚠️ Film non trouvé. Essayez un autre titre.")
+
+# ── Films aléatoires ──────────────────────────────────
+st.markdown("""
+    <h3 style="
+        font-size: 45px;
+        background: linear-gradient(45deg, #ff4444, #ff6b35, #ff9500, #ffcc00, #fff000);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    "> Films à découvrir aujourd'hui</h3>
+""", unsafe_allow_html=True)
+
+if 'films_aleatoires' not in st.session_state:
+    st.session_state['films_aleatoires'] = df_films.dropna(
+        subset=['poster_path']).sample(10).reset_index(drop=True)
+
+films_aleatoires = st.session_state['films_aleatoires']
+cols = st.columns(10)
+for i, (_, row) in enumerate(films_aleatoires.iterrows()):
+    with cols[i % 10]:
+        poster_url = f"https://image.tmdb.org/t/p/w500{row['poster_path']}"
+        st.image(poster_url, use_container_width=True)
+        if st.button(f"{row['titre']} ⭐{row['averageRating']}",
+                     key=f"aleatoire_{i}_{row['tconst']}",
+                     use_container_width=True):
+            st.session_state['film_selectionne'] = row['tconst']
+
+# ── Détails du film sélectionné ───────────────────────
+if 'film_selectionne' in st.session_state:
+    film = df_films[df_films['tconst'] == st.session_state['film_selectionne']].iloc[0]
+    st.divider()
+    st.markdown("### 🎥 Film sélectionné")
+    col1, col2 = st.columns([1, 4])
+    with col1:
+        poster_url = f"https://image.tmdb.org/t/p/w500{film['poster_path']}"
+        st.image(poster_url, width=200)
+    with col2:
+        st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
+        st.markdown(f"**Genres :** {film['genres']}")
+        st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
+        st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
+        st.markdown(f"**Synopsis :** {film['overview']}")
+        # ── Trailer ───────────────────────────────────
+        trailer_url = get_trailer(film['titre'])
+        if trailer_url:
+           st.markdown("**🎬 Bande-annonce :**")
+           col_video, col_vide = st.columns([1, 1])
+           with col_video:
+                st.components.v1.iframe(trailer_url, height=350)
+        if st.button("🍿 Voir les recommandations",
+                     key=f"reco_aleatoire_{film['tconst']}"):
+            recommandations = recommander(film['titre'])
+            if recommandations is not None:
+                cols = st.columns(5)
+                for i, (_, row) in enumerate(recommandations.iterrows()):
+                    with cols[i]:
+                        poster_url = f"https://image.tmdb.org/t/p/w500{row['poster_path']}"
+                        st.image(poster_url, use_container_width=True)
+                        with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
+                            st.markdown(f"**Année :** {int(row['startYear'])}")
+                            st.markdown(f"**Genres :** {row['genres']}")
+                            st.markdown(f"**Synopsis :** {row['overview']}")
+
+# ── Pied de page ──────────────────────────────────────
+st.divider()
+st.markdown("<center>Wild Code School 2026 — Projet 2</center>",
+            unsafe_allow_html=True)
