@@ -132,7 +132,7 @@ st.markdown(f"""
     }}
     [data-testid="stTextInput"] input {{
         background-color: rgba(0, 0, 0, 0.0) !important;
-        border: 1px solid rgba(255, 255, 255, 0.7) !important;
+        border: 1px solid rgba(255, 255, 255, 0.6) !important;
         color: white !important;
     }}
     [data-testid="stTextInput"] > div {{
@@ -148,7 +148,7 @@ st.markdown(f"""
     }}
     [data-testid="stSelectbox"] > div > div {{
         background-color: rgba(0, 0, 0, 0.0) !important;
-        border: 1px solid rgba(255, 255, 255, 0.7) !important;
+        border: 1px solid rgba(255, 255, 255, 0.6) !important;
         color: white !important;
     }}
     [data-testid="stSelectbox"] span {{
