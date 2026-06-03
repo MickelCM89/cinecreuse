@@ -321,7 +321,7 @@ st.markdown("""
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-    ">🏆 Top 10 Drama</h3>
+    ">🏆 Top  Drama</h3>
 """, unsafe_allow_html=True)
 
 top_drama = df_films[df_films['genres'].str.contains('Drama', na=False)]\
@@ -343,7 +343,7 @@ st.markdown("""
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-    ">😂 Top 10 Comédie</h3>
+    ">😂 Top 1 Comédie</h3>
 """, unsafe_allow_html=True)
 
 top_comedie = df_films[df_films['genres'].str.contains('Comedy', na=False)]\
