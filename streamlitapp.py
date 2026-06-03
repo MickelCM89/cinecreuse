@@ -246,7 +246,7 @@ st.markdown(f"""
         padding: 15px 0 !important;
     }}
     [data-testid="stSidebar"] button:hover {{
-        background-color: rgba(255,255,255,0.1) !important;
+        background-color: rgba(255,255,255,0.0) !important;
         border-radius: 10px !important;
     }}
     </style>
