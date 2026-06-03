@@ -3,3 +3,5 @@ pandas
 scikit-learn
 numpy
 google-api-python-client
+matplotlib
+seaborn
