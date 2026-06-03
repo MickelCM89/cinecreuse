@@ -107,7 +107,7 @@ def afficher_details(film, key_prefix):
     col1, col2 = st.columns([1, 4])
     with col1:
         st.image(f"https://image.tmdb.org/t/p/w500{film['poster_path']}", width=150)
-        if st.button("🤍 Favoris", key=f"fav_{key_prefix}_{film['tconst']}"):
+        if st.button("❤️ Favoris", key=f"fav_{key_prefix}_{film['tconst']}"):
             if film['tconst'] not in st.session_state['favoris']:
                 st.session_state['favoris'].append(film['tconst'])
                 st.success("Ajouté aux favoris!")
@@ -262,7 +262,7 @@ st.markdown(f"""
 with st.sidebar:
     if st.button("🏠", help="Accueil", use_container_width=True):
         st.session_state['page'] = 'accueil'
-    if st.button("🤍", help="Favoris", use_container_width=True):
+    if st.button("❤️", help="Favoris", use_container_width=True):
         st.session_state['page'] = 'favoris'
     if st.button("🔔", help="Notifications", use_container_width=True):
         st.session_state['page'] = 'notifications'
