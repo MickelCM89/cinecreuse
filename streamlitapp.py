@@ -69,7 +69,14 @@ def construire_modele(df_films):
     return cosine_sim, df_films
 
 df_films = charger_données()
-cosine_sim, df_ml = construire_modele(df_films)
+# ── Initialiser session_state ─────────────────────────
+for key in ['film_aleatoire', 'film_drama', 'film_comedie', 'film_action']:
+    if key not in st.session_state:
+        st.session_state[key] = None
+
+if 'films_aleatoires' not in st.session_state:
+    st.session_state['films_aleatoires'] = df_films.dropna(
+        subset=['poster_path']).sample(10).reset_index(drop=True)
 
 # ── Fonction recommander ──────────────────────────────
 def recommander(titre, n=5):
@@ -144,9 +151,9 @@ def afficher_categorie(titre_section, films, key_prefix, session_key):
                          use_container_width=True):
                 st.session_state[session_key] = row['tconst']
 
-    if session_key in st.session_state:
-        film = df_films[df_films['tconst'] == st.session_state[session_key]].iloc[0]
-        afficher_details(film, key_prefix)
+    if session_key in st.session_state and st.session_state[session_key] is not None:
+       film = df_films[df_films['tconst'] == st.session_state[session_key]].iloc[0]
+       afficher_details(film, key_prefix)
 
 # ── CSS ───────────────────────────────────────────────
 with open("logo3.png", "rb") as f:
@@ -343,7 +350,7 @@ elif genre_selectionne != "🎭 Tous les genres" or pays_selectionne != "🌍 To
 
 # ── Films aléatoires ──────────────────────────────────
 afficher_categorie(
-    "🎲 Films à découvrir aujourd'hui",
+    " Films à découvrir aujourd'hui",
     df_films.dropna(subset=['poster_path']).sample(10) if 'films_aleatoires' not in st.session_state else st.session_state['films_aleatoires'],
     "aleatoire",
     "film_aleatoire"
