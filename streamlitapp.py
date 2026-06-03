@@ -90,6 +90,38 @@ def recommander(titre, n=5):
     indices = [i[0] for i in scores]
     return df_ml.iloc[indices]
 
+# ── Fonction afficher résultats ───────────────────────
+def afficher_resultats(resultats):
+    for _, film in resultats.iterrows():
+        col1, col2 = st.columns([1, 4])
+        with col1:
+            poster_url = f"https://image.tmdb.org/t/p/w500{film['poster_path']}"
+            st.image(poster_url, width=150)
+        with col2:
+            st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
+            st.markdown(f"**Genres :** {film['genres']}")
+            st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
+            st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
+            st.markdown(f"**Synopsis :** {film['overview']}")
+            trailer_url = get_trailer(film['titre'])
+            if trailer_url:
+                st.markdown("**🎬 Bande-annonce :**")
+                st.components.v1.iframe(trailer_url, height=450)
+            if st.button("🍿 Voir les recommandations",
+                         key=f"reco_{film['tconst']}"):
+                recommandations = recommander(film['titre'])
+                if recommandations is not None:
+                    cols = st.columns(5)
+                    for i, (_, row) in enumerate(recommandations.iterrows()):
+                        with cols[i]:
+                            poster_url = f"https://image.tmdb.org/t/p/w500{row['poster_path']}"
+                            st.image(poster_url, use_container_width=True)
+                            with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
+                                st.markdown(f"**Année :** {int(row['startYear'])}")
+                                st.markdown(f"**Genres :** {row['genres']}")
+                                st.markdown(f"**Synopsis :** {row['overview']}")
+        st.divider()
+
 # ── CSS ───────────────────────────────────────────────
 with open("logo3.png", "rb") as f:
     logo_base64 = base64.b64encode(f.read()).decode()
@@ -130,6 +162,13 @@ st.markdown(f"""
         from {{ transform: rotate(0deg); }}
         to   {{ transform: rotate(360deg); }}
     }}
+    .barre-nav {{
+        background-color: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 10px 20px;
+        margin-bottom: 20px;
+    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -153,21 +192,19 @@ with col_titre:
         ">CINÉCREUSE</h1>
     """, unsafe_allow_html=True)
 
-# ── Barre de navigation ───────────────────────────────
-st.markdown("<br>", unsafe_allow_html=True)
+# ── Barre de navigation transparente ─────────────────
+st.markdown('<div class="barre-nav">', unsafe_allow_html=True)
 col_search, col_genre, col_pays = st.columns([3, 1, 1])
 
 with col_search:
     film_input = st.text_input("", placeholder="🔍 Rechercher un film...",
                                 label_visibility="collapsed")
-
 with col_genre:
     tous_genres = sorted(df_films['genres'].dropna().str.split(',')
                         .explode().str.strip().unique().tolist())
     tous_genres.insert(0, "🎭 Tous les genres")
     genre_selectionne = st.selectbox("", tous_genres,
                                       label_visibility="collapsed")
-
 with col_pays:
     tous_pays = sorted(df_films['production_countries'].dropna()
                       .str.replace("'", "").str.replace("[", "")
@@ -177,6 +214,7 @@ with col_pays:
     tous_pays.insert(0, "🌍 Tous les pays")
     pays_selectionne = st.selectbox("", tous_pays,
                                      label_visibility="collapsed")
+st.markdown('</div>', unsafe_allow_html=True)
 
 # ── Filtrer le dataset ────────────────────────────────
 df_filtre = df_films.copy()
@@ -187,7 +225,7 @@ if pays_selectionne != "🌍 Tous les pays":
     df_filtre = df_filtre[df_filtre['production_countries'].str.contains(
                           pays_selectionne, na=False)]
 
-# ── Résultats de recherche ────────────────────────────
+# ── Résultats ─────────────────────────────────────────
 if film_input:
     resultats = df_filtre[
         df_filtre['titre'].str.contains(film_input, case=False, na=False) |
@@ -196,35 +234,7 @@ if film_input:
     if not resultats.empty:
         st.success(f"{len(resultats)} film(s) trouvé(s) pour : **{film_input}**")
         st.markdown("### 🎬 Résultats de recherche")
-        for _, film in resultats.iterrows():
-            col1, col2 = st.columns([1, 4])
-            with col1:
-                poster_url = f"https://image.tmdb.org/t/p/w500{film['poster_path']}"
-                st.image(poster_url, width=150)
-            with col2:
-                st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
-                st.markdown(f"**Genres :** {film['genres']}")
-                st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
-                st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
-                st.markdown(f"**Synopsis :** {film['overview']}")
-                trailer_url = get_trailer(film['titre'])
-                if trailer_url:
-                    st.markdown("**🎬 Bande-annonce :**")
-                    st.components.v1.iframe(trailer_url, height=450)
-                if st.button("🍿 Voir les recommandations",
-                             key=f"reco_recherche_{film['tconst']}"):
-                    recommandations = recommander(film['titre'])
-                    if recommandations is not None:
-                        cols = st.columns(5)
-                        for i, (_, row) in enumerate(recommandations.iterrows()):
-                            with cols[i]:
-                                poster_url = f"https://image.tmdb.org/t/p/w500{row['poster_path']}"
-                                st.image(poster_url, use_container_width=True)
-                                with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
-                                    st.markdown(f"**Année :** {int(row['startYear'])}")
-                                    st.markdown(f"**Genres :** {row['genres']}")
-                                    st.markdown(f"**Synopsis :** {row['overview']}")
-            st.divider()
+        afficher_resultats(resultats)
     else:
         st.warning("⚠️ Film non trouvé. Essayez un autre titre.")
 
@@ -232,31 +242,7 @@ elif genre_selectionne != "🎭 Tous les genres" or pays_selectionne != "🌍 To
     resultats = df_filtre.sort_values('averageRating', ascending=False).head(20)
     if not resultats.empty:
         st.markdown("### 🎬 Résultats")
-        for _, film in resultats.iterrows():
-            col1, col2 = st.columns([1, 4])
-            with col1:
-                poster_url = f"https://image.tmdb.org/t/p/w500{film['poster_path']}"
-                st.image(poster_url, width=150)
-            with col2:
-                st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
-                st.markdown(f"**Genres :** {film['genres']}")
-                st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
-                st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
-                st.markdown(f"**Synopsis :** {film['overview']}")
-                if st.button("🍿 Voir les recommandations",
-                             key=f"reco_filtre_{film['tconst']}"):
-                    recommandations = recommander(film['titre'])
-                    if recommandations is not None:
-                        cols = st.columns(5)
-                        for i, (_, row) in enumerate(recommandations.iterrows()):
-                            with cols[i]:
-                                poster_url = f"https://image.tmdb.org/t/p/w500{row['poster_path']}"
-                                st.image(poster_url, use_container_width=True)
-                                with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
-                                    st.markdown(f"**Année :** {int(row['startYear'])}")
-                                    st.markdown(f"**Genres :** {row['genres']}")
-                                    st.markdown(f"**Synopsis :** {row['overview']}")
-            st.divider()
+        afficher_resultats(resultats)
 
 # ── Films aléatoires ──────────────────────────────────
 st.markdown("""
