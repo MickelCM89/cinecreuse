@@ -232,12 +232,13 @@ st.markdown(f"""
         cursor: pointer !important;
     }}
     [data-testid="stSidebar"] {{
-        background-color: rgba(0, 0, 0, 0.1) !important;
+        background-color: rgba(0, 0, 0, 0.0) !important;
         background: none !important;
         box-shadow: none !important;
         border-right: none !important;
         min-width: 80px !important;
         max-width: 80px !important;
+        backdrop-filter: blur(5px);
     }}
     section[data-testid="stSidebar"] > div {{
         background-color: rgba(0, 0, 0, 0.0) !important;
