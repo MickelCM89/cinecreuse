@@ -175,7 +175,7 @@ def style_graph(fig, ax, titre):
     ax.xaxis.label.set_color('white')
     ax.yaxis.label.set_color('white')
     for spine in ax.spines.values():
-        spine.set_edgecolor('rgba(255,255,255,0.2)')
+        spine.set_edgecolor((1, 1, 1, 0.2))
 
 # ── CSS ───────────────────────────────────────────────
 with open("logo3.png", "rb") as f:
