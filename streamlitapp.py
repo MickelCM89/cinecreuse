@@ -547,7 +547,7 @@ else:
                 st.divider()
 
     afficher_categorie(
-        "🎲 Films à découvrir aujourd'hui",
+        " 🤟 Films à découvrir aujourd'hui",
         st.session_state['films_aleatoires'],
         "aleatoire", "film_aleatoire"
     )
