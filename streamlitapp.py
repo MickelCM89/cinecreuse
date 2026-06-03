@@ -233,10 +233,15 @@ st.markdown(f"""
     }}
     [data-testid="stSidebar"] {{
         background-color: rgba(0, 0, 0, 0.0) !important;
-        backdrop-filter: blur(10px);
+        background: none !important;
+        box-shadow: none !important;
+        border-right: none !important;
         min-width: 80px !important;
         max-width: 80px !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.0) !important;
+    }}
+    section[data-testid="stSidebar"] > div {{
+        background-color: rgba(0, 0, 0, 0.0) !important;
+        background: none !important;
     }}
     [data-testid="stSidebar"] button {{
         background-color: transparent !important;
