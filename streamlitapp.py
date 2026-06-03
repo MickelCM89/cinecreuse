@@ -130,6 +130,12 @@ st.markdown(f"""
         from {{ transform: rotate(0deg); }}
         to   {{ transform: rotate(360deg); }}
     }}
+    [data-testid="stSelectbox"] {{
+        cursor: pointer !important;
+    }}
+    [data-testid="stSelectbox"] * {{
+        cursor: pointer !important;
+    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -266,7 +272,7 @@ st.markdown("""
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-    ">🎲 Films à découvrir aujourd'hui</h3>
+    "> Films à découvrir aujourd'hui</h3>
 """, unsafe_allow_html=True)
 
 if 'films_aleatoires' not in st.session_state:
