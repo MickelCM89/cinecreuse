@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 import base64
+import matplotlib.pyplot as plt
+import seaborn as sns
+import ast
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import MinMaxScaler
@@ -162,6 +165,18 @@ def afficher_categorie(titre_section, films, key_prefix, session_key):
         film = df_films[df_films['tconst'] == st.session_state[session_key]].iloc[0]
         afficher_details(film, key_prefix)
 
+# ── Fonction style graphique ──────────────────────────
+def style_graph(fig, ax, titre):
+    BG = '#606060'
+    fig.patch.set_facecolor(BG)
+    ax.set_facecolor(BG)
+    ax.set_title(titre, color='white', fontsize=14, pad=15)
+    ax.tick_params(colors='white')
+    ax.xaxis.label.set_color('white')
+    ax.yaxis.label.set_color('white')
+    for spine in ax.spines.values():
+        spine.set_edgecolor('rgba(255,255,255,0.2)')
+
 # ── CSS ───────────────────────────────────────────────
 with open("logo3.png", "rb") as f:
     logo_base64 = base64.b64encode(f.read()).decode()
@@ -268,6 +283,8 @@ with st.sidebar:
         st.session_state['page'] = 'notifications'
     if st.button("👤", help="Profil", use_container_width=True):
         st.session_state['page'] = 'profil'
+    if st.button("📊", help="KPI", use_container_width=True):
+        st.session_state['page'] = 'kpi'
 
 # ── En-tête toujours visible ──────────────────────────
 col_logo, col_titre = st.columns([1, 8])
@@ -314,6 +331,122 @@ elif st.session_state['page'] == 'profil':
     st.markdown("### 👤 Mon Profil")
     st.markdown("**Nom :** Utilisateur CinéCreuse")
     st.markdown(f"**Favoris :** {len(st.session_state['favoris'])} films")
+
+elif st.session_state['page'] == 'kpi':
+    st.markdown("""
+        <h2 style="
+            background: linear-gradient(45deg, #c0392b, #e74c3c, #e67e22, #f39c12, #f1c40f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        ">📊 Tableau de bord — KPI</h2>
+    """, unsafe_allow_html=True)
+
+    col_k1, col_k2 = st.columns(2)
+
+    # ── KPI 1 — Top 10 genres ─────────────────────────
+    with col_k1:
+        st.markdown("#### 🎭 KPI 1 — Top 10 genres")
+        genres_count = df_films['genres'].dropna().str.split(',').explode().str.strip()
+        top_genres = genres_count.value_counts().head(10).reset_index()
+        top_genres.columns = ['genre', 'nombre']
+        fig1, ax1 = plt.subplots(figsize=(7, 5))
+        style_graph(fig1, ax1, 'Top 10 genres')
+        colors = ['#c0392b', '#d44e2a', '#e67e22', '#e8922a', '#f0a030',
+                  '#f39c12', '#f5a623', '#f7b733', '#f9ca44', '#f1c40f']
+        sns.barplot(data=top_genres, x='nombre', y='genre',
+                    palette=colors, ax=ax1)
+        ax1.set_xlabel('Nombre de films', color='white')
+        ax1.set_ylabel('')
+        st.pyplot(fig1)
+        st.markdown("*Drama et Comedy dominent la production cinématographique mondiale.*")
+
+    # ── KPI 2 — Évolution films par décennie ──────────
+    with col_k2:
+        st.markdown("#### 📅 KPI 2 — Évolution films par décennie")
+        df_decade = df_films.copy()
+        df_decade['decennie'] = (df_decade['startYear'] // 10 * 10).astype(int)
+        decade_count = df_decade.groupby('decennie').size().reset_index(name='nombre')
+        decade_count = decade_count[decade_count['decennie'] >= 1920]
+        fig2, ax2 = plt.subplots(figsize=(7, 5))
+        style_graph(fig2, ax2, 'Évolution des films par décennie')
+        ax2.plot(decade_count['decennie'], decade_count['nombre'],
+                 color='#e67e22', linewidth=2.5)
+        ax2.fill_between(decade_count['decennie'], decade_count['nombre'],
+                         alpha=0.3, color='#f39c12')
+        ax2.set_xlabel('Décennie', color='white')
+        ax2.set_ylabel('Nombre de films', color='white')
+        st.pyplot(fig2)
+        st.markdown("*La production explose à partir des années 2000.*")
+
+    st.divider()
+    col_k3, col_k4 = st.columns(2)
+
+    # ── KPI 5 — Distribution des notes ────────────────
+    with col_k3:
+        st.markdown("#### ⭐ KPI 5 — Distribution des notes IMDb")
+        fig5, ax5 = plt.subplots(figsize=(7, 5))
+        style_graph(fig5, ax5, 'Distribution des notes IMDb')
+        ax5.hist(df_films['averageRating'].dropna(), bins=20,
+                 color='#e74c3c', edgecolor='#f39c12', linewidth=0.5)
+        ax5.set_xlabel('Note IMDb', color='white')
+        ax5.set_ylabel('Nombre de films', color='white')
+        st.pyplot(fig5)
+        st.markdown("*La majorité des films ont une note entre 6 et 7.5.*")
+
+    # ── KPI 6 — Top 10 films mieux notés ──────────────
+    with col_k4:
+        st.markdown("#### 🏆 KPI 6 — Top 10 films les mieux notés")
+        top_films = df_films[df_films['numVotes'] >= 1000]\
+            .sort_values('averageRating', ascending=False).head(10)
+        fig6, ax6 = plt.subplots(figsize=(7, 5))
+        style_graph(fig6, ax6, 'Top 10 films les mieux notés')
+        colors2 = ['#c0392b', '#d44e2a', '#e67e22', '#e8922a', '#f0a030',
+                   '#f39c12', '#f5a623', '#f7b733', '#f9ca44', '#f1c40f']
+        sns.barplot(data=top_films, x='averageRating', y='titre',
+                    palette=colors2, ax=ax6)
+        ax6.set_xlabel('Note IMDb', color='white')
+        ax6.set_ylabel('')
+        st.pyplot(fig6)
+        st.markdown("*Les films classiques dominent le top 10.*")
+
+    st.divider()
+    col_k5, col_k6 = st.columns(2)
+
+    # ── KPI 7 — Top 10 pays de production ─────────────
+    with col_k5:
+        st.markdown("#### 🌍 KPI 7 — Top 10 pays de production")
+        def parse_countries(x):
+            try:
+                return ast.literal_eval(x)
+            except:
+                return []
+        pays_explode = df_films['production_countries'].dropna()\
+            .apply(parse_countries).explode()
+        top_pays = pays_explode.value_counts().head(10).reset_index()
+        top_pays.columns = ['pays', 'nombre']
+        fig7, ax7 = plt.subplots(figsize=(7, 5))
+        style_graph(fig7, ax7, 'Top 10 pays de production')
+        sns.barplot(data=top_pays, x='nombre', y='pays',
+                    palette=colors, ax=ax7)
+        ax7.set_xlabel('Nombre de films', color='white')
+        ax7.set_ylabel('')
+        st.pyplot(fig7)
+        st.markdown("*Les États-Unis dominent largement la production mondiale.*")
+
+    # ── KPI 8 — Budget vs Recettes ────────────────────
+    with col_k6:
+        st.markdown("#### 💰 KPI 8 — Budget vs Recettes")
+        df_budget = df_films[(df_films['budget'] > 0) &
+                             (df_films['revenue'] > 0)].copy()
+        fig8, ax8 = plt.subplots(figsize=(7, 5))
+        style_graph(fig8, ax8, 'Budget vs Recettes')
+        ax8.scatter(df_budget['budget'], df_budget['revenue'],
+                    alpha=0.5, color='#e74c3c', s=20)
+        ax8.set_xlabel('Budget ($)', color='white')
+        ax8.set_ylabel('Recettes ($)', color='white')
+        st.pyplot(fig8)
+        st.markdown("*Les films à gros budget génèrent généralement plus de recettes.*")
 
 else:
     st.markdown("<br>", unsafe_allow_html=True)
@@ -414,7 +547,7 @@ else:
                 st.divider()
 
     afficher_categorie(
-        " Films à découvrir aujourd'hui",
+        "🎲 Films à découvrir aujourd'hui",
         st.session_state['films_aleatoires'],
         "aleatoire", "film_aleatoire"
     )
