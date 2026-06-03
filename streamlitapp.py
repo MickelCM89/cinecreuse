@@ -313,6 +313,72 @@ for i, (_, row) in enumerate(films_aleatoires.iterrows()):
                      key=f"aleatoire_{i}_{row['tconst']}",
                      use_container_width=True):
             st.session_state['film_selectionne'] = row['tconst']
+            # ── Top 10 par genre ──────────────────────────────────
+st.markdown("""
+    <h3 style="
+        font-size: 35px;
+        background: linear-gradient(45deg, #ff4444, #ff6b35, #ff9500, #ffcc00, #fff000);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    ">🏆 Top 10 Drama</h3>
+""", unsafe_allow_html=True)
+
+top_drama = df_films[df_films['genres'].str.contains('Drama', na=False)]\
+    .sort_values('averageRating', ascending=False).head(10)
+cols = st.columns(10)
+for i, (_, row) in enumerate(top_drama.iterrows()):
+    with cols[i % 10]:
+        poster_url = f"https://image.tmdb.org/t/p/w500{row['poster_path']}"
+        st.image(poster_url, use_container_width=True)
+        if st.button(f"{row['titre']} ⭐{row['averageRating']}",
+                     key=f"drama_{i}_{row['tconst']}",
+                     use_container_width=True):
+            st.session_state['film_selectionne'] = row['tconst']
+
+st.markdown("""
+    <h3 style="
+        font-size: 35px;
+        background: linear-gradient(45deg, #ff4444, #ff6b35, #ff9500, #ffcc00, #fff000);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    ">😂 Top 10 Comédie</h3>
+""", unsafe_allow_html=True)
+
+top_comedie = df_films[df_films['genres'].str.contains('Comedy', na=False)]\
+    .sort_values('averageRating', ascending=False).head(10)
+cols = st.columns(10)
+for i, (_, row) in enumerate(top_comedie.iterrows()):
+    with cols[i % 10]:
+        poster_url = f"https://image.tmdb.org/t/p/w500{row['poster_path']}"
+        st.image(poster_url, use_container_width=True)
+        if st.button(f"{row['titre']} ⭐{row['averageRating']}",
+                     key=f"comedie_{i}_{row['tconst']}",
+                     use_container_width=True):
+            st.session_state['film_selectionne'] = row['tconst']
+
+st.markdown("""
+    <h3 style="
+        font-size: 35px;
+        background: linear-gradient(45deg, #ff4444, #ff6b35, #ff9500, #ffcc00, #fff000);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    ">💥 Top 10 Action</h3>
+""", unsafe_allow_html=True)
+
+top_action = df_films[df_films['genres'].str.contains('Action', na=False)]\
+    .sort_values('averageRating', ascending=False).head(10)
+cols = st.columns(10)
+for i, (_, row) in enumerate(top_action.iterrows()):
+    with cols[i % 10]:
+        poster_url = f"https://image.tmdb.org/t/p/w500{row['poster_path']}"
+        st.image(poster_url, use_container_width=True)
+        if st.button(f"{row['titre']} ⭐{row['averageRating']}",
+                     key=f"action_{i}_{row['tconst']}",
+                     use_container_width=True):
+            st.session_state['film_selectionne'] = row['tconst']
 
 # ── Détails du film sélectionné ───────────────────────
 if 'film_selectionne' in st.session_state:
