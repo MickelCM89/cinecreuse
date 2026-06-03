@@ -15,7 +15,7 @@ st.set_page_config(
 )
 
 # ── YouTube API ───────────────────────────────────────
-YOUTUBE_API_KEY = 'AIzaSyDkKZie4PBfLPnKsfo9hSjMluJOYjNLoS8 '
+YOUTUBE_API_KEY = 'AIzaSyDkKZie4PBfLPnKsfo9hSjMluJOYjNLoS8'
 
 def get_trailer(titre):
     try:
@@ -153,18 +153,45 @@ with col_titre:
         ">CINÉCREUSE</h1>
     """, unsafe_allow_html=True)
 
-# ── Zone de recherche ─────────────────────────────────
+# ── Barre de navigation ───────────────────────────────
 st.markdown("<br>", unsafe_allow_html=True)
-col1, col2, col3 = st.columns([1, 2, 1])
-with col2:
+col_search, col_genre, col_pays = st.columns([3, 1, 1])
+
+with col_search:
     film_input = st.text_input("", placeholder="🔍 Rechercher un film...",
                                 label_visibility="collapsed")
 
+with col_genre:
+    tous_genres = sorted(df_films['genres'].dropna().str.split(',')
+                        .explode().str.strip().unique().tolist())
+    tous_genres.insert(0, "🎭 Tous les genres")
+    genre_selectionne = st.selectbox("", tous_genres,
+                                      label_visibility="collapsed")
+
+with col_pays:
+    tous_pays = sorted(df_films['production_countries'].dropna()
+                      .str.replace("'", "").str.replace("[", "")
+                      .str.replace("]", "").str.split(",")
+                      .explode().str.strip().unique().tolist())
+    tous_pays = [p for p in tous_pays if p != '']
+    tous_pays.insert(0, "🌍 Tous les pays")
+    pays_selectionne = st.selectbox("", tous_pays,
+                                     label_visibility="collapsed")
+
+# ── Filtrer le dataset ────────────────────────────────
+df_filtre = df_films.copy()
+if genre_selectionne != "🎭 Tous les genres":
+    df_filtre = df_filtre[df_filtre['genres'].str.contains(
+                          genre_selectionne, na=False)]
+if pays_selectionne != "🌍 Tous les pays":
+    df_filtre = df_filtre[df_filtre['production_countries'].str.contains(
+                          pays_selectionne, na=False)]
+
 # ── Résultats de recherche ────────────────────────────
 if film_input:
-    resultats = df_films[
-        df_films['titre'].str.contains(film_input, case=False, na=False) |
-        df_films['primaryTitle'].str.contains(film_input, case=False, na=False)
+    resultats = df_filtre[
+        df_filtre['titre'].str.contains(film_input, case=False, na=False) |
+        df_filtre['primaryTitle'].str.contains(film_input, case=False, na=False)
     ]
     if not resultats.empty:
         st.success(f"{len(resultats)} film(s) trouvé(s) pour : **{film_input}**")
@@ -180,7 +207,6 @@ if film_input:
                 st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
                 st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
                 st.markdown(f"**Synopsis :** {film['overview']}")
-                # ── Trailer ───────────────────────────
                 trailer_url = get_trailer(film['titre'])
                 if trailer_url:
                     st.markdown("**🎬 Bande-annonce :**")
@@ -202,6 +228,36 @@ if film_input:
     else:
         st.warning("⚠️ Film non trouvé. Essayez un autre titre.")
 
+elif genre_selectionne != "🎭 Tous les genres" or pays_selectionne != "🌍 Tous les pays":
+    resultats = df_filtre.sort_values('averageRating', ascending=False).head(20)
+    if not resultats.empty:
+        st.markdown("### 🎬 Résultats")
+        for _, film in resultats.iterrows():
+            col1, col2 = st.columns([1, 4])
+            with col1:
+                poster_url = f"https://image.tmdb.org/t/p/w500{film['poster_path']}"
+                st.image(poster_url, width=150)
+            with col2:
+                st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
+                st.markdown(f"**Genres :** {film['genres']}")
+                st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
+                st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
+                st.markdown(f"**Synopsis :** {film['overview']}")
+                if st.button("🍿 Voir les recommandations",
+                             key=f"reco_filtre_{film['tconst']}"):
+                    recommandations = recommander(film['titre'])
+                    if recommandations is not None:
+                        cols = st.columns(5)
+                        for i, (_, row) in enumerate(recommandations.iterrows()):
+                            with cols[i]:
+                                poster_url = f"https://image.tmdb.org/t/p/w500{row['poster_path']}"
+                                st.image(poster_url, use_container_width=True)
+                                with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
+                                    st.markdown(f"**Année :** {int(row['startYear'])}")
+                                    st.markdown(f"**Genres :** {row['genres']}")
+                                    st.markdown(f"**Synopsis :** {row['overview']}")
+            st.divider()
+
 # ── Films aléatoires ──────────────────────────────────
 st.markdown("""
     <h3 style="
@@ -210,7 +266,7 @@ st.markdown("""
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-    "> Films à découvrir aujourd'hui</h3>
+    ">🎲 Films à découvrir aujourd'hui</h3>
 """, unsafe_allow_html=True)
 
 if 'films_aleatoires' not in st.session_state:
@@ -243,12 +299,11 @@ if 'film_selectionne' in st.session_state:
         st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
         st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
         st.markdown(f"**Synopsis :** {film['overview']}")
-        # ── Trailer ───────────────────────────────────
         trailer_url = get_trailer(film['titre'])
         if trailer_url:
-           st.markdown("**🎬 Bande-annonce :**")
-           col_video, col_vide = st.columns([1, 1])
-           with col_video:
+            st.markdown("**🎬 Bande-annonce :**")
+            col_video, col_vide = st.columns([1, 1])
+            with col_video:
                 st.components.v1.iframe(trailer_url, height=350)
         if st.button("🍿 Voir les recommandations",
                      key=f"reco_aleatoire_{film['tconst']}"):
