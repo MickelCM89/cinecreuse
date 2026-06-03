@@ -365,7 +365,7 @@ st.markdown("""
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-    ">💥 Top 10 Action</h3>
+    ">💥 Top Action</h3>
 """, unsafe_allow_html=True)
 
 top_action = df_films[df_films['genres'].str.contains('Action', na=False)]\
