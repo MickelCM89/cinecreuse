@@ -232,7 +232,7 @@ st.markdown(f"""
         cursor: pointer !important;
     }}
     [data-testid="stSidebar"] {{
-        background-color: rgba(0, 0, 0, 0.0) !important;
+        background-color: rgba(0, 0, 0, 0.1) !important;
         background: none !important;
         box-shadow: none !important;
         border-right: none !important;
