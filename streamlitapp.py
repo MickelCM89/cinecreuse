@@ -339,7 +339,7 @@ elif st.session_state['page'] == 'kpi':
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-        ">📊 Tableau de bord — KPI</h2>
+        "> Tableau de bord — KPI</h2>
     """, unsafe_allow_html=True)
 
     col_k1, col_k2 = st.columns(2)
