@@ -130,11 +130,18 @@ st.markdown(f"""
         from {{ transform: rotate(0deg); }}
         to   {{ transform: rotate(360deg); }}
     }}
-    /* Barres transparentes */
     [data-testid="stTextInput"] input {{
         background-color: rgba(0, 0, 0, 0.0) !important;
         border: 1px solid rgba(255, 255, 255, 0.3) !important;
         color: white !important;
+    }}
+    [data-testid="stTextInput"] > div {{
+        background-color: rgba(0, 0, 0, 0.0) !important;
+        border: none !important;
+    }}
+    [data-testid="stTextInput"] > div > div {{
+        background-color: rgba(0, 0, 0, 0.0) !important;
+    }}
     }}
     [data-testid="stTextInput"] input::placeholder {{
         color: rgba(255, 255, 255, 0.6) !important;
