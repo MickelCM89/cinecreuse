@@ -69,6 +69,38 @@ def construire_modele(df_films):
     return cosine_sim, df_films
 
 df_films = charger_données()
+# ── Sidebar Navigation ────────────────────────────────
+with st.sidebar:
+    st.markdown("""
+        <h2 style="
+            background: linear-gradient(45deg, #c0392b, #e74c3c, #e67e22, #f39c12, #f1c40f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        ">🎬 CINÉCREUSE</h2>
+    """, unsafe_allow_html=True)
+    
+    st.divider()
+    
+    page = st.selectbox("Navigation", [
+        "🏠 Accueil",
+        "🔍 Recherche",
+        "🏆 Top Films",
+        "📊 KPI"
+    ])
+    
+    st.divider()
+    
+    if st.button("🔐 Accès Admin"):
+        st.session_state['show_login'] = True
+    
+    if st.session_state.get('show_login', False):
+        password = st.text_input("Mot de passe", type="password")
+        if password == "cinecreuse2026":
+            st.session_state['admin_connecte'] = True
+            st.success("✅ Connecté!")
+        elif password:
+            st.error("❌ Mot de passe incorrect")
 # ── Initialiser session_state ─────────────────────────
 for key in ['film_aleatoire', 'film_drama', 'film_comedie', 'film_action']:
     if key not in st.session_state:
