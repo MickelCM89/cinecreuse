@@ -238,7 +238,7 @@ st.markdown(f"""
         border-right: none !important;
         min-width: 80px !important;
         max-width: 80px !important;
-        backdrop-filter: blur(5px);
+        backdrop-filter: blur(3px);
     }}
     section[data-testid="stSidebar"] > div {{
         background-color: rgba(0, 0, 0, 0.0) !important;
