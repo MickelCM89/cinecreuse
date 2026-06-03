@@ -270,7 +270,30 @@ with st.sidebar:
         st.session_state['page'] = 'profil'
 
 # ── Page Favoris ──────────────────────────────────────
+# ── Fonction en-tête ──────────────────────────────────
+def afficher_entete():
+    col_logo, col_titre = st.columns([1, 8])
+    with col_logo:
+        st.markdown(f"""
+            <img src="data:image/png;base64,{logo_base64}" class="logo-circulaire">
+        """, unsafe_allow_html=True)
+    with col_titre:
+        st.markdown("""
+            <h1 style="
+                font-size: 90px;
+                font-weight: 900;
+                letter-spacing: 6px;
+                background: linear-gradient(45deg, #c0392b, #e74c3c, #e67e22, #f39c12, #f1c40f);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                margin: 0;
+            ">CINÉCREUSE</h1>
+        """, unsafe_allow_html=True)
+
+# ── Page Favoris ──────────────────────────────────────
 if st.session_state['page'] == 'favoris':
+    afficher_entete()
     st.markdown("### 🤍 Mes Favoris")
     if st.session_state['favoris']:
         films_favoris = df_films[df_films['tconst'].isin(st.session_state['favoris'])]
@@ -288,6 +311,24 @@ if st.session_state['page'] == 'favoris':
 
 # ── Page Notifications ────────────────────────────────
 elif st.session_state['page'] == 'notifications':
+    afficher_entete()
+    st.markdown("### 🔔 Notifications")
+    st.info("Pas de nouvelles notifications.")
+
+# ── Page Profil ───────────────────────────────────────
+elif st.session_state['page'] == 'profil':
+    afficher_entete()
+    st.markdown("### 👤 Mon Profil")
+    st.markdown("**Nom :** Utilisateur CinéCreuse")
+    st.markdown(f"**Favoris :** {len(st.session_state['favoris'])} films")
+
+# ── Page Accueil ──────────────────────────────────────
+else:
+    afficher_entete()
+    # ... resto del código accueil
+
+# ── Page Notifications ────────────────────────────────
+elif st.session_state['page'] == 'notifications':
     st.markdown("### 🔔 Notifications")
     st.info("Pas de nouvelles notifications.")
 
@@ -297,7 +338,7 @@ elif st.session_state['page'] == 'profil':
     st.markdown("**Nom :** Utilisateur CinéCreuse")
     st.markdown(f"**Favoris :** {len(st.session_state['favoris'])} films")
 
-# ── Page Accueil ──────────────────────────────────────
+
 else:
     # ── En-tête ───────────────────────────────────────
     col_logo, col_titre = st.columns([1, 8])
@@ -421,7 +462,7 @@ else:
 
     # ── Catégories ────────────────────────────────────
     afficher_categorie(
-        "🎲 Films à découvrir aujourd'hui",
+        "Films à découvrir aujourd'hui",
         st.session_state['films_aleatoires'],
         "aleatoire",
         "film_aleatoire"
