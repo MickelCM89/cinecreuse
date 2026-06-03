@@ -69,46 +69,19 @@ def construire_modele(df_films):
     return cosine_sim, df_films
 
 df_films = charger_données()
-# ── Sidebar Navigation ────────────────────────────────
-with st.sidebar:
-    st.markdown("""
-        <h2 style="
-            background: linear-gradient(45deg, #c0392b, #e74c3c, #e67e22, #f39c12, #f1c40f);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        ">🎬 CINÉCREUSE</h2>
-    """, unsafe_allow_html=True)
-    
-    st.divider()
-    
-    page = st.selectbox("Navigation", [
-        "🏠 Accueil",
-        "🔍 Recherche",
-        "🏆 Top Films",
-        "📊 KPI"
-    ])
-    
-    st.divider()
-    
-    if st.button("🔐 Accès Admin"):
-        st.session_state['show_login'] = True
-    
-    if st.session_state.get('show_login', False):
-        password = st.text_input("Mot de passe", type="password")
-        if password == "cinecreuse2026":
-            st.session_state['admin_connecte'] = True
-            st.success("✅ Connecté!")
-        elif password:
-            st.error("❌ Mot de passe incorrect")
+cosine_sim, df_ml = construire_modele(df_films)
+
 # ── Initialiser session_state ─────────────────────────
-for key in ['film_aleatoire', 'film_drama', 'film_comedie', 'film_action']:
+for key in ['film_aleatoire', 'film_drama', 'film_comedie', 'film_action', 'page']:
     if key not in st.session_state:
         st.session_state[key] = None
 
 if 'films_aleatoires' not in st.session_state:
     st.session_state['films_aleatoires'] = df_films.dropna(
         subset=['poster_path']).sample(10).reset_index(drop=True)
+
+if 'favoris' not in st.session_state:
+    st.session_state['favoris'] = []
 
 # ── Fonction recommander ──────────────────────────────
 def recommander(titre, n=5):
@@ -134,6 +107,10 @@ def afficher_details(film, key_prefix):
     col1, col2 = st.columns([1, 4])
     with col1:
         st.image(f"https://image.tmdb.org/t/p/w500{film['poster_path']}", width=150)
+        if st.button("🤍 Favoris", key=f"fav_{key_prefix}_{film['tconst']}"):
+            if film['tconst'] not in st.session_state['favoris']:
+                st.session_state['favoris'].append(film['tconst'])
+                st.success("Ajouté aux favoris!")
     with col2:
         st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
         st.markdown(f"**Genres :** {film['genres']}")
@@ -172,7 +149,6 @@ def afficher_categorie(titre_section, films, key_prefix, session_key):
             background-clip: text;
         ">{titre_section}</h3>
     """, unsafe_allow_html=True)
-
     cols = st.columns(10)
     for i, (_, row) in enumerate(films.iterrows()):
         with cols[i % 10]:
@@ -182,10 +158,9 @@ def afficher_categorie(titre_section, films, key_prefix, session_key):
                          key=f"{key_prefix}_{i}_{row['tconst']}",
                          use_container_width=True):
                 st.session_state[session_key] = row['tconst']
-
     if session_key in st.session_state and st.session_state[session_key] is not None:
-       film = df_films[df_films['tconst'] == st.session_state[session_key]].iloc[0]
-       afficher_details(film, key_prefix)
+        film = df_films[df_films['tconst'] == st.session_state[session_key]].iloc[0]
+        afficher_details(film, key_prefix)
 
 # ── CSS ───────────────────────────────────────────────
 with open("logo3.png", "rb") as f:
@@ -256,71 +231,43 @@ st.markdown(f"""
     [data-testid="stSelectbox"] * {{
         cursor: pointer !important;
     }}
+    [data-testid="stSidebar"] {{
+        background-color: rgba(0, 0, 0, 0.3) !important;
+        backdrop-filter: blur(10px);
+        min-width: 80px !important;
+        max-width: 80px !important;
+    }}
+    [data-testid="stSidebar"] button {{
+        background-color: transparent !important;
+        border: none !important;
+        font-size: 28px !important;
+        width: 100% !important;
+        padding: 15px 0 !important;
+    }}
+    [data-testid="stSidebar"] button:hover {{
+        background-color: rgba(255,255,255,0.1) !important;
+        border-radius: 10px !important;
+    }}
     </style>
 """, unsafe_allow_html=True)
 
-# ── En-tête ───────────────────────────────────────────
-col_logo, col_titre = st.columns([1, 8])
-with col_logo:
-    st.markdown(f"""
-        <img src="data:image/png;base64,{logo_base64}" class="logo-circulaire">
-    """, unsafe_allow_html=True)
-with col_titre:
-    st.markdown("""
-        <h1 style="
-            font-size: 90px;
-            font-weight: 900;
-            letter-spacing: 6px;
-            background: linear-gradient(45deg, #c0392b, #e74c3c, #e67e22, #f39c12, #f1c40f);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin: 0;
-        ">CINÉCREUSE</h1>
-    """, unsafe_allow_html=True)
+# ── Sidebar ───────────────────────────────────────────
+with st.sidebar:
+    if st.button("🏠", help="Accueil", use_container_width=True):
+        st.session_state['page'] = 'accueil'
+    if st.button("🤍", help="Favoris", use_container_width=True):
+        st.session_state['page'] = 'favoris'
+    if st.button("🔔", help="Notifications", use_container_width=True):
+        st.session_state['page'] = 'notifications'
+    if st.button("👤", help="Profil", use_container_width=True):
+        st.session_state['page'] = 'profil'
 
-# ── Barre de navigation ───────────────────────────────
-st.markdown("<br>", unsafe_allow_html=True)
-col_search, col_genre, col_pays = st.columns([3, 1, 1])
-
-with col_search:
-    film_input = st.text_input("", placeholder="🔍 Rechercher un film...",
-                                label_visibility="collapsed")
-with col_genre:
-    tous_genres = sorted(df_films['genres'].dropna().str.split(',')
-                        .explode().str.strip().unique().tolist())
-    tous_genres.insert(0, "🎭 Tous les genres")
-    genre_selectionne = st.selectbox("", tous_genres,
-                                      label_visibility="collapsed")
-with col_pays:
-    tous_pays = sorted(df_films['production_countries'].dropna()
-                      .str.replace("'", "").str.replace("[", "")
-                      .str.replace("]", "").str.split(",")
-                      .explode().str.strip().unique().tolist())
-    tous_pays = [p for p in tous_pays if p != '']
-    tous_pays.insert(0, "🌍 Tous les pays")
-    pays_selectionne = st.selectbox("", tous_pays,
-                                     label_visibility="collapsed")
-
-# ── Filtrer le dataset ────────────────────────────────
-df_filtre = df_films.copy()
-if genre_selectionne != "🎭 Tous les genres":
-    df_filtre = df_filtre[df_filtre['genres'].str.contains(
-                          genre_selectionne, na=False)]
-if pays_selectionne != "🌍 Tous les pays":
-    df_filtre = df_filtre[df_filtre['production_countries'].str.contains(
-                          pays_selectionne, na=False)]
-
-# ── Résultats de recherche ────────────────────────────
-if film_input:
-    resultats = df_filtre[
-        df_filtre['titre'].str.contains(film_input, case=False, na=False) |
-        df_filtre['primaryTitle'].str.contains(film_input, case=False, na=False)
-    ]
-    if not resultats.empty:
-        st.success(f"{len(resultats)} film(s) trouvé(s) pour : **{film_input}**")
-        st.markdown("### 🎬 Résultats de recherche")
-        for _, film in resultats.iterrows():
+# ── Page Favoris ──────────────────────────────────────
+if st.session_state['page'] == 'favoris':
+    st.markdown("### 🤍 Mes Favoris")
+    if st.session_state['favoris']:
+        films_favoris = df_films[df_films['tconst'].isin(st.session_state['favoris'])]
+        for _, film in films_favoris.iterrows():
             col1, col2 = st.columns([1, 4])
             with col1:
                 st.image(f"https://image.tmdb.org/t/p/w500{film['poster_path']}", width=150)
@@ -328,84 +275,162 @@ if film_input:
                 st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
                 st.markdown(f"**Genres :** {film['genres']}")
                 st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
-                st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
-                st.markdown(f"**Synopsis :** {film['overview']}")
-                trailer_url = get_trailer(film['titre'])
-                if trailer_url:
-                    st.markdown("**🎬 Bande-annonce :**")
-                    st.components.v1.iframe(trailer_url, height=450)
-                if st.button("🍿 Voir les recommandations",
-                             key=f"reco_recherche_{film['tconst']}"):
-                    recommandations = recommander(film['titre'])
-                    if recommandations is not None:
-                        cols = st.columns(5)
-                        for i, (_, row) in enumerate(recommandations.iterrows()):
-                            with cols[i]:
-                                st.image(f"https://image.tmdb.org/t/p/w500{row['poster_path']}",
-                                         use_container_width=True)
-                                with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
-                                    st.markdown(f"**Année :** {int(row['startYear'])}")
-                                    st.markdown(f"**Genres :** {row['genres']}")
-                                    st.markdown(f"**Synopsis :** {row['overview']}")
             st.divider()
     else:
-        st.warning("⚠️ Film non trouvé. Essayez un autre titre.")
+        st.info("Aucun favori. Ajoutez des films depuis l'accueil!")
 
-elif genre_selectionne != "🎭 Tous les genres" or pays_selectionne != "🌍 Tous les pays":
-    resultats = df_filtre.sort_values('averageRating', ascending=False).head(20)
-    if not resultats.empty:
-        st.markdown("### 🎬 Résultats")
-        for _, film in resultats.iterrows():
-            col1, col2 = st.columns([1, 4])
-            with col1:
-                st.image(f"https://image.tmdb.org/t/p/w500{film['poster_path']}", width=150)
-            with col2:
-                st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
-                st.markdown(f"**Genres :** {film['genres']}")
-                st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
-                st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
-                st.markdown(f"**Synopsis :** {film['overview']}")
-                if st.button("🍿 Voir les recommandations",
-                             key=f"reco_filtre_{film['tconst']}"):
-                    recommandations = recommander(film['titre'])
-                    if recommandations is not None:
-                        cols = st.columns(5)
-                        for i, (_, row) in enumerate(recommandations.iterrows()):
-                            with cols[i]:
-                                st.image(f"https://image.tmdb.org/t/p/w500{row['poster_path']}",
-                                         use_container_width=True)
-                                with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
-                                    st.markdown(f"**Année :** {int(row['startYear'])}")
-                                    st.markdown(f"**Genres :** {row['genres']}")
-                                    st.markdown(f"**Synopsis :** {row['overview']}")
-            st.divider()
+# ── Page Notifications ────────────────────────────────
+elif st.session_state['page'] == 'notifications':
+    st.markdown("### 🔔 Notifications")
+    st.info("Pas de nouvelles notifications.")
 
-# ── Films aléatoires ──────────────────────────────────
-afficher_categorie(
-    " Films à découvrir aujourd'hui",
-    df_films.dropna(subset=['poster_path']).sample(10) if 'films_aleatoires' not in st.session_state else st.session_state['films_aleatoires'],
-    "aleatoire",
-    "film_aleatoire"
-)
+# ── Page Profil ───────────────────────────────────────
+elif st.session_state['page'] == 'profil':
+    st.markdown("### 👤 Mon Profil")
+    st.markdown("**Nom :** Utilisateur CinéCreuse")
+    st.markdown(f"**Favoris :** {len(st.session_state['favoris'])} films")
 
-if 'films_aleatoires' not in st.session_state:
-    st.session_state['films_aleatoires'] = df_films.dropna(
-        subset=['poster_path']).sample(10).reset_index(drop=True)
+# ── Page Accueil ──────────────────────────────────────
+else:
+    # ── En-tête ───────────────────────────────────────
+    col_logo, col_titre = st.columns([1, 8])
+    with col_logo:
+        st.markdown(f"""
+            <img src="data:image/png;base64,{logo_base64}" class="logo-circulaire">
+        """, unsafe_allow_html=True)
+    with col_titre:
+        st.markdown("""
+            <h1 style="
+                font-size: 90px;
+                font-weight: 900;
+                letter-spacing: 6px;
+                background: linear-gradient(45deg, #c0392b, #e74c3c, #e67e22, #f39c12, #f1c40f);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                margin: 0;
+            ">CINÉCREUSE</h1>
+        """, unsafe_allow_html=True)
 
-# ── Top Drama ─────────────────────────────────────────
-top_drama = df_films[df_films['genres'].str.contains('Drama', na=False)]\
-    .sort_values('averageRating', ascending=False).head(10)
-afficher_categorie("🏆 Top Drama", top_drama, "drama", "film_drama")
+    # ── Barre de navigation ───────────────────────────
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_search, col_genre, col_pays = st.columns([3, 1, 1])
+    with col_search:
+        film_input = st.text_input("", placeholder="🔍 Rechercher un film...",
+                                    label_visibility="collapsed")
+    with col_genre:
+        tous_genres = sorted(df_films['genres'].dropna().str.split(',')
+                            .explode().str.strip().unique().tolist())
+        tous_genres.insert(0, "🎭 Tous les genres")
+        genre_selectionne = st.selectbox("", tous_genres,
+                                          label_visibility="collapsed")
+    with col_pays:
+        tous_pays = sorted(df_films['production_countries'].dropna()
+                          .str.replace("'", "").str.replace("[", "")
+                          .str.replace("]", "").str.split(",")
+                          .explode().str.strip().unique().tolist())
+        tous_pays = [p for p in tous_pays if p != '']
+        tous_pays.insert(0, "🌍 Tous les pays")
+        pays_selectionne = st.selectbox("", tous_pays,
+                                         label_visibility="collapsed")
 
-# ── Top Comédie ───────────────────────────────────────
-top_comedie = df_films[df_films['genres'].str.contains('Comedy', na=False)]\
-    .sort_values('averageRating', ascending=False).head(10)
-afficher_categorie("🎭 Top Comédie", top_comedie, "comedie", "film_comedie")
+    # ── Filtrer ───────────────────────────────────────
+    df_filtre = df_films.copy()
+    if genre_selectionne != "🎭 Tous les genres":
+        df_filtre = df_filtre[df_filtre['genres'].str.contains(
+                              genre_selectionne, na=False)]
+    if pays_selectionne != "🌍 Tous les pays":
+        df_filtre = df_filtre[df_filtre['production_countries'].str.contains(
+                              pays_selectionne, na=False)]
 
-# ── Top Action ────────────────────────────────────────
-top_action = df_films[df_films['genres'].str.contains('Action', na=False)]\
-    .sort_values('averageRating', ascending=False).head(10)
-afficher_categorie("🚀 Top Action", top_action, "action", "film_action")
+    # ── Résultats ─────────────────────────────────────
+    if film_input:
+        resultats = df_filtre[
+            df_filtre['titre'].str.contains(film_input, case=False, na=False) |
+            df_filtre['primaryTitle'].str.contains(film_input, case=False, na=False)
+        ]
+        if not resultats.empty:
+            st.success(f"{len(resultats)} film(s) trouvé(s) pour : **{film_input}**")
+            st.markdown("### 🎬 Résultats de recherche")
+            for _, film in resultats.iterrows():
+                col1, col2 = st.columns([1, 4])
+                with col1:
+                    st.image(f"https://image.tmdb.org/t/p/w500{film['poster_path']}", width=150)
+                with col2:
+                    st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
+                    st.markdown(f"**Genres :** {film['genres']}")
+                    st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
+                    st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
+                    st.markdown(f"**Synopsis :** {film['overview']}")
+                    trailer_url = get_trailer(film['titre'])
+                    if trailer_url:
+                        st.markdown("**🎬 Bande-annonce :**")
+                        st.components.v1.iframe(trailer_url, height=450)
+                    if st.button("🍿 Voir les recommandations",
+                                 key=f"reco_recherche_{film['tconst']}"):
+                        recommandations = recommander(film['titre'])
+                        if recommandations is not None:
+                            cols = st.columns(5)
+                            for i, (_, row) in enumerate(recommandations.iterrows()):
+                                with cols[i]:
+                                    st.image(f"https://image.tmdb.org/t/p/w500{row['poster_path']}",
+                                             use_container_width=True)
+                                    with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
+                                        st.markdown(f"**Année :** {int(row['startYear'])}")
+                                        st.markdown(f"**Genres :** {row['genres']}")
+                                        st.markdown(f"**Synopsis :** {row['overview']}")
+                st.divider()
+        else:
+            st.warning("⚠️ Film non trouvé. Essayez un autre titre.")
+
+    elif genre_selectionne != "🎭 Tous les genres" or pays_selectionne != "🌍 Tous les pays":
+        resultats = df_filtre.sort_values('averageRating', ascending=False).head(20)
+        if not resultats.empty:
+            st.markdown("### 🎬 Résultats")
+            for _, film in resultats.iterrows():
+                col1, col2 = st.columns([1, 4])
+                with col1:
+                    st.image(f"https://image.tmdb.org/t/p/w500{film['poster_path']}", width=150)
+                with col2:
+                    st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
+                    st.markdown(f"**Genres :** {film['genres']}")
+                    st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
+                    st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
+                    st.markdown(f"**Synopsis :** {film['overview']}")
+                    if st.button("🍿 Voir les recommandations",
+                                 key=f"reco_filtre_{film['tconst']}"):
+                        recommandations = recommander(film['titre'])
+                        if recommandations is not None:
+                            cols = st.columns(5)
+                            for i, (_, row) in enumerate(recommandations.iterrows()):
+                                with cols[i]:
+                                    st.image(f"https://image.tmdb.org/t/p/w500{row['poster_path']}",
+                                             use_container_width=True)
+                                    with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
+                                        st.markdown(f"**Année :** {int(row['startYear'])}")
+                                        st.markdown(f"**Genres :** {row['genres']}")
+                                        st.markdown(f"**Synopsis :** {row['overview']}")
+                st.divider()
+
+    # ── Catégories ────────────────────────────────────
+    afficher_categorie(
+        "🎲 Films à découvrir aujourd'hui",
+        st.session_state['films_aleatoires'],
+        "aleatoire",
+        "film_aleatoire"
+    )
+
+    top_drama = df_films[df_films['genres'].str.contains('Drama', na=False)]\
+        .sort_values('averageRating', ascending=False).head(10)
+    afficher_categorie("🏆 Top Drama", top_drama, "drama", "film_drama")
+
+    top_comedie = df_films[df_films['genres'].str.contains('Comedy', na=False)]\
+        .sort_values('averageRating', ascending=False).head(10)
+    afficher_categorie("🎭 Top Comédie", top_comedie, "comedie", "film_comedie")
+
+    top_action = df_films[df_films['genres'].str.contains('Action', na=False)]\
+        .sort_values('averageRating', ascending=False).head(10)
+    afficher_categorie("🚀 Top Action", top_action, "action", "film_action")
 
 # ── Pied de page ──────────────────────────────────────
 st.divider()
