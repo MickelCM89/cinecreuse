@@ -291,7 +291,7 @@ with col_titre:
 
 # ── Pages ─────────────────────────────────────────────
 if st.session_state['page'] == 'favoris':
-    st.markdown("### 🤍 Mes Favoris")
+    st.markdown("### ❤️ Mes Favoris")
     if st.session_state['favoris']:
         films_favoris = df_films[df_films['tconst'].isin(st.session_state['favoris'])]
         for _, film in films_favoris.iterrows():
@@ -414,7 +414,7 @@ else:
                 st.divider()
 
     afficher_categorie(
-        "🎲 Films à découvrir aujourd'hui",
+        " Films à découvrir aujourd'hui",
         st.session_state['films_aleatoires'],
         "aleatoire", "film_aleatoire"
     )
