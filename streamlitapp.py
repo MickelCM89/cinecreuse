@@ -557,7 +557,7 @@ else:
 
     top_comedie = df_films[df_films['genres'].str.contains('Comedy', na=False)]\
         .sort_values('averageRating', ascending=False).head(10)
-    afficher_categorie("🎭 Top Comédie", top_comedie, "comedie", "film_comedie")
+    afficher_categorie("💅 Top Comédie", top_comedie, "comedie", "film_comedie")
 
     top_action = df_films[df_films['genres'].str.contains('Action', na=False)]\
         .sort_values('averageRating', ascending=False).head(10)
