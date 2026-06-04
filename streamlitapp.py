@@ -555,13 +555,15 @@ else:
         st.session_state['films_aleatoires'],
         "aleatoire", "film_aleatoire"
     )
-    top_drama = df_films[df_films['genres'].str.contains('Drama', na=False)]\
-        .sort_values('averageRating', ascending=False).head(10)
-    afficher_categorie("🏆 Top Drama", top_drama, "drama", "film_drama")
+    top_france = df_films[df_films['production_countries'].str.contains('France', na=False)]\
+    .sort_values('averageRating', ascending=False).head(10)
+    afficher_categorie("🏆 Top France", top_france, "drama", "film_drama")
 
-    top_comedie = df_films[df_films['genres'].str.contains('Comedy', na=False)]\
-        .sort_values('averageRating', ascending=False).head(10)
-    afficher_categorie("💅 Top Comédie", top_comedie, "comedie", "film_comedie")
+    top_classique = df_films[
+    (df_films['startYear'] >= 1950) & 
+    (df_films['startYear'] <= 1990)
+    ].sort_values('averageRating', ascending=False).head(10)
+    afficher_categorie("🏛 Top Classique", top_classique, "comedie", "film_comedie")  
 
     top_action = df_films[df_films['genres'].str.contains('Action', na=False)]\
         .sort_values('averageRating', ascending=False).head(10)
