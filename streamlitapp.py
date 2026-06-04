@@ -126,20 +126,26 @@ def afficher_details(film, key_prefix):
             col_video, col_vide = st.columns([1, 1])
             with col_video:
                 st.components.v1.iframe(trailer_url, height=250)
-        if st.button("🍿 Voir les recommandations",
-                     key=f"reco_{key_prefix}_{film['tconst']}"):
-            recommandations = recommander(film['titre'])
-            if recommandations is not None:
-                cols = st.columns(7)
-                for i, (_, row) in enumerate(recommandations.iterrows()):
-                    with cols[i % 7]:
+        voir_reco = st.button("🍿 Voir les recommandations",
+                     key=f"reco_{key_prefix}_{film['tconst']}")
 
-                        st.image(f"https://image.tmdb.org/t/p/w500{row['poster_path']}",
-                                 use_container_width=True)
-                        with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
-                            st.markdown(f"**Année :** {int(row['startYear'])}")
-                            st.markdown(f"**Genres :** {row['genres']}")
-                            st.markdown(f"**Synopsis :** {row['overview']}")
+    # ── Recomendaciones FUERA de col2 ─────────────────
+    if voir_reco:
+        st.session_state[f"show_reco_{key_prefix}_{film['tconst']}"] = True
+
+    if st.session_state.get(f"show_reco_{key_prefix}_{film['tconst']}", False):
+        recommandations = recommander(film['titre'])
+        if recommandations is not None:
+            st.markdown("#### 🎬 Films similaires")
+            cols = st.columns(5)
+            for i, (_, row) in enumerate(recommandations.iterrows()):
+                with cols[i % 5]:
+                    st.image(f"https://image.tmdb.org/t/p/w500{row['poster_path']}",
+                             use_container_width=True)
+                    with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
+                        st.markdown(f"**Année :** {int(row['startYear'])}")
+                        st.markdown(f"**Genres :** {row['genres']}")
+                        st.markdown(f"**Synopsis :** {row['overview']}")
     st.divider()
 
 # ── Fonction afficher catégorie ───────────────────────
