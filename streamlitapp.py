@@ -281,23 +281,25 @@ with st.sidebar:
             return base64.b64encode(f.read()).decode()
 
     icons = {
-        'accueil': icono_b64("Accueil.png"),
-        'favoris': icono_b64("Favoris.png"),
-        'notifications': icono_b64("Notifications.png"),
-        'profil': icono_b64("Profil.png"),
-        'kpi': icono_b64("KPI.png")
+        'accueil': ('Accueil.png', 'Accueil'),
+        'favoris': ('Favoris.png', 'Favoris'),
+        'notifications': ('Notifications.png', 'Notifications'),
+        'profil': ('Profil.png', 'Profil'),
+        'kpi': ('KPI.png', 'KPI')
     }
 
-    for page, img in icons.items():
-        if st.button("​", key=f"btn_{page}",
-                     use_container_width=True,
-                     help=page.capitalize()):
-            st.session_state['page'] = page
-        st.markdown(f'''
-            <img src="data:image/png;base64,{img}"
-            style="width:35px; margin-left:22px;
-            margin-top:-45px; display:block;">
-        ''', unsafe_allow_html=True)
+    for page, (fichier, label) in icons.items():
+        img = icono_b64(fichier)
+        col_img, col_btn = st.columns([1, 1])
+        with col_img:
+            st.markdown(f'''
+                <img src="data:image/png;base64,{img}"
+                style="width:35px; margin-top:8px;">
+            ''', unsafe_allow_html=True)
+        with col_btn:
+            if st.button(label, key=f"btn_{page}",
+                         use_container_width=True):
+                st.session_state['page'] = page
 
 # ── En-tête toujours visible ──────────────────────────
 col_logo, col_titre = st.columns([1, 8])
