@@ -106,19 +106,22 @@ def recommander(titre, n=6):
     return df_ml.iloc[indices]
 
 # ── Fonction afficher recommandations ─────────────────
-def afficher_recommandations(titre, key):
+ddef afficher_recommandations(titre, key):
     recommandations = recommander(titre)
     if recommandations is not None:
         st.markdown("#### 🎬 Films similaires")
-        cols = st.columns(3)
-        for i, (_, row) in enumerate(recommandations.iterrows()):
-            with cols[i % 3]:
-                st.image(f"https://image.tmdb.org/t/p/w500{row['poster_path']}",
-                         use_container_width=True)
-                with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
-                    st.markdown(f"**Année :** {int(row['startYear'])}")
-                    st.markdown(f"**Genres :** {row['genres']}")
-                    st.markdown(f"**Synopsis :** {row['overview']}")
+        with st.container():
+            col_a, col_b, col_c = st.columns(3)
+            reco_list = list(recommandations.iterrows())
+            for i, (_, row) in enumerate(reco_list):
+                col = [col_a, col_b, col_c][i % 3]
+                with col:
+                    poster_url = f"https://image.tmdb.org/t/p/original{row['poster_path']}"
+                    st.image(poster_url, use_container_width=True)
+                    with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
+                        st.markdown(f"**Année :** {int(row['startYear'])}")
+                        st.markdown(f"**Genres :** {row['genres']}")
+                        st.markdown(f"**Synopsis :** {row['overview']}")
 
 # ── Fonction afficher détails ─────────────────────────
 def afficher_details(film, key_prefix):
