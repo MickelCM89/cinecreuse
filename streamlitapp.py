@@ -262,18 +262,20 @@ st.markdown(f"""
     [data-testid="stSidebar"] button {{
         background-color: transparent !important;
         border: none !important;
-        font-size: 28px !important;
         width: 100% !important;
-        padding: 15px 0 !important;
+        padding: 25px 0 !important;
+        height: 70px !important;
     }}
     [data-testid="stSidebar"] button:hover {{
         background-color: rgba(255,255,255,0.1) !important;
         border-radius: 10px !important;
     }}
+    [data-testid="stSidebar"] button p {{
+        display: none !important;
+    }}
     </style>
 """, unsafe_allow_html=True)
 
-# ── Sidebar ───────────────────────────────────────────
 # ── Sidebar ───────────────────────────────────────────
 with st.sidebar:
     def icono_b64(nom):
@@ -291,7 +293,7 @@ with st.sidebar:
     for page, fichier, label in pages:
         img = icono_b64(fichier)
         clicked = st.button(
-            f"​",
+            "​",
             key=f"btn_{page}",
             use_container_width=True,
             help=label
@@ -301,27 +303,13 @@ with st.sidebar:
         st.markdown(f'''
             <div style="
                 text-align:center;
-                margin-top:-52px;
-                margin-bottom:8px;
+                margin-top:-62px;
+                margin-bottom:15px;
                 pointer-events:none;">
                 <img src="data:image/png;base64,{img}"
                 style="width:38px;">
             </div>
         ''', unsafe_allow_html=True)
-
-# CSS para ocultar el texto del botón
-st.markdown("""
-    <style>
-    [data-testid="stSidebar"] button p {
-        display: none !important;
-    }
-    [data-testid="stSidebar"] button {
-        margin-top: -55px !important;
-        height: 50px !important;
-        opacity: 0 !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
 
 # ── En-tête toujours visible ──────────────────────────
 col_logo, col_titre = st.columns([1, 8])
@@ -376,12 +364,11 @@ elif st.session_state['page'] == 'kpi':
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-        "> Tableau de bord — KPI</h2>
+        ">📊 Tableau de bord — KPI</h2>
     """, unsafe_allow_html=True)
 
     col_k1, col_k2 = st.columns(2)
 
-    # ── KPI 1 — Top 10 genres ─────────────────────────
     with col_k1:
         st.markdown("#### 🎭 KPI 1 — Top 10 genres")
         genres_count = df_films['genres'].dropna().str.split(',').explode().str.strip()
@@ -398,7 +385,6 @@ elif st.session_state['page'] == 'kpi':
         st.pyplot(fig1)
         st.markdown("*Drama et Comedy dominent la production cinématographique mondiale.*")
 
-    # ── KPI 2 — Évolution films par décennie ──────────
     with col_k2:
         st.markdown("#### 📅 KPI 2 — Évolution films par décennie")
         df_decade = df_films.copy()
@@ -419,7 +405,6 @@ elif st.session_state['page'] == 'kpi':
     st.divider()
     col_k3, col_k4 = st.columns(2)
 
-    # ── KPI 5 — Distribution des notes ────────────────
     with col_k3:
         st.markdown("#### ⭐ KPI 5 — Distribution des notes IMDb")
         fig5, ax5 = plt.subplots(figsize=(7, 5))
@@ -431,7 +416,6 @@ elif st.session_state['page'] == 'kpi':
         st.pyplot(fig5)
         st.markdown("*La majorité des films ont une note entre 6 et 7.5.*")
 
-    # ── KPI 6 — Top 10 films mieux notés ──────────────
     with col_k4:
         st.markdown("#### 🏆 KPI 6 — Top 10 films les mieux notés")
         top_films = df_films[df_films['numVotes'] >= 1000]\
@@ -450,7 +434,6 @@ elif st.session_state['page'] == 'kpi':
     st.divider()
     col_k5, col_k6 = st.columns(2)
 
-    # ── KPI 7 — Top 10 pays de production ─────────────
     with col_k5:
         st.markdown("#### 🌍 KPI 7 — Top 10 pays de production")
         def parse_countries(x):
@@ -471,7 +454,6 @@ elif st.session_state['page'] == 'kpi':
         st.pyplot(fig7)
         st.markdown("*Les États-Unis dominent largement la production mondiale.*")
 
-    # ── KPI 8 — Budget vs Recettes ────────────────────
     with col_k6:
         st.markdown("#### 💰 KPI 8 — Budget vs Recettes")
         df_budget = df_films[(df_films['budget'] > 0) &
@@ -584,7 +566,7 @@ else:
                 st.divider()
 
     afficher_categorie(
-        " 🤟 Films à découvrir aujourd'hui",
+        "🤟 Films à découvrir aujourd'hui",
         st.session_state['films_aleatoires'],
         "aleatoire", "film_aleatoire"
     )
