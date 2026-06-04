@@ -290,17 +290,24 @@ with st.sidebar:
 
     for page, fichier, label in pages:
         img = icono_b64(fichier)
+        clicked = st.button(
+            f"​",
+            key=f"btn_{page}",
+            use_container_width=True,
+            help=label
+        )
+        if clicked:
+            st.session_state['page'] = page
         st.markdown(f'''
-            <div style="text-align:center; margin: 10px 0;">
+            <div style="
+                text-align:center;
+                margin-top:-52px;
+                margin-bottom:8px;
+                pointer-events:none;">
                 <img src="data:image/png;base64,{img}"
-                style="width:40px; opacity:0.8;"
-                title="{label}">
+                style="width:38px;">
             </div>
         ''', unsafe_allow_html=True)
-        if st.button(f"‎", key=f"btn_{page}",
-                     use_container_width=True,
-                     help=label):
-            st.session_state['page'] = page
 
 # CSS para ocultar el texto del botón
 st.markdown("""
