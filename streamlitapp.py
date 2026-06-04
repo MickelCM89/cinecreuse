@@ -87,7 +87,7 @@ if 'favoris' not in st.session_state:
     st.session_state['favoris'] = []
 
 # ── Fonction recommander ──────────────────────────────
-def recommander(titre, n=5):
+def recommander(titre, n=6):
     resultats = df_ml[
         df_ml['titre'].str.contains(titre, case=False, na=False) |
         df_ml['primaryTitle'].str.contains(titre, case=False, na=False)
@@ -104,6 +104,21 @@ def recommander(titre, n=5):
     scores = [s for s in scores if s[0] != idx][:n]
     indices = [i[0] for i in scores]
     return df_ml.iloc[indices]
+
+# ── Fonction afficher recommandations ─────────────────
+def afficher_recommandations(titre, key):
+    recommandations = recommander(titre)
+    if recommandations is not None:
+        st.markdown("#### 🎬 Films similaires")
+        cols = st.columns(3)
+        for i, (_, row) in enumerate(recommandations.iterrows()):
+            with cols[i % 3]:
+                st.image(f"https://image.tmdb.org/t/p/w500{row['poster_path']}",
+                         use_container_width=True)
+                with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
+                    st.markdown(f"**Année :** {int(row['startYear'])}")
+                    st.markdown(f"**Genres :** {row['genres']}")
+                    st.markdown(f"**Synopsis :** {row['overview']}")
 
 # ── Fonction afficher détails ─────────────────────────
 def afficher_details(film, key_prefix):
@@ -128,24 +143,10 @@ def afficher_details(film, key_prefix):
                 st.components.v1.iframe(trailer_url, height=250)
         voir_reco = st.button("🍿 Voir les recommandations",
                      key=f"reco_{key_prefix}_{film['tconst']}")
-
-    # ── Recomendaciones FUERA de col2 ─────────────────
     if voir_reco:
         st.session_state[f"show_reco_{key_prefix}_{film['tconst']}"] = True
-
     if st.session_state.get(f"show_reco_{key_prefix}_{film['tconst']}", False):
-        recommandations = recommander(film['titre'])
-        if recommandations is not None:
-            st.markdown("#### 🎬 Films similaires")
-            cols = st.columns(5)
-            for i, (_, row) in enumerate(recommandations.iterrows()):
-                with cols[i % 5]:
-                    st.image(f"https://image.tmdb.org/t/p/w500{row['poster_path']}",
-                             use_container_width=True)
-                    with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
-                        st.markdown(f"**Année :** {int(row['startYear'])}")
-                        st.markdown(f"**Genres :** {row['genres']}")
-                        st.markdown(f"**Synopsis :** {row['overview']}")
+        afficher_recommandations(film['titre'], f"{key_prefix}_{film['tconst']}")
     st.divider()
 
 # ── Fonction afficher catégorie ───────────────────────
@@ -375,7 +376,6 @@ elif st.session_state['page'] == 'kpi':
     """, unsafe_allow_html=True)
 
     col_k1, col_k2 = st.columns(2)
-
     with col_k1:
         st.markdown("#### 🎭 KPI 1 — Top 10 genres")
         genres_count = df_films['genres'].dropna().str.split(',').explode().str.strip()
@@ -385,8 +385,7 @@ elif st.session_state['page'] == 'kpi':
         style_graph(fig1, ax1, 'Top 10 genres')
         colors = ['#c0392b', '#d44e2a', '#e67e22', '#e8922a', '#f0a030',
                   '#f39c12', '#f5a623', '#f7b733', '#f9ca44', '#f1c40f']
-        sns.barplot(data=top_genres, x='nombre', y='genre',
-                    palette=colors, ax=ax1)
+        sns.barplot(data=top_genres, x='nombre', y='genre', palette=colors, ax=ax1)
         ax1.set_xlabel('Nombre de films', color='white')
         ax1.set_ylabel('')
         st.pyplot(fig1)
@@ -411,7 +410,6 @@ elif st.session_state['page'] == 'kpi':
 
     st.divider()
     col_k3, col_k4 = st.columns(2)
-
     with col_k3:
         st.markdown("#### ⭐ KPI 5 — Distribution des notes IMDb")
         fig5, ax5 = plt.subplots(figsize=(7, 5))
@@ -440,7 +438,6 @@ elif st.session_state['page'] == 'kpi':
 
     st.divider()
     col_k5, col_k6 = st.columns(2)
-
     with col_k5:
         st.markdown("#### 🌍 KPI 7 — Top 10 pays de production")
         def parse_countries(x):
@@ -454,8 +451,7 @@ elif st.session_state['page'] == 'kpi':
         top_pays.columns = ['pays', 'nombre']
         fig7, ax7 = plt.subplots(figsize=(7, 5))
         style_graph(fig7, ax7, 'Top 10 pays de production')
-        sns.barplot(data=top_pays, x='nombre', y='pays',
-                    palette=colors, ax=ax7)
+        sns.barplot(data=top_pays, x='nombre', y='pays', palette=colors, ax=ax7)
         ax7.set_xlabel('Nombre de films', color='white')
         ax7.set_ylabel('')
         st.pyplot(fig7)
@@ -526,19 +522,10 @@ else:
                     if trailer_url:
                         st.markdown("**🎬 Bande-annonce :**")
                         st.components.v1.iframe(trailer_url, height=450)
-                    if st.button("🍿 Voir les recommandations",
-                                 key=f"reco_recherche_{film['tconst']}"):
-                        recommandations = recommander(film['titre'])
-                        if recommandations is not None:
-                            cols = st.columns(7)
-                            for i, (_, row) in enumerate(recommandations.iterrows()):
-                                with cols[i % 7]:
-                                    st.image(f"https://image.tmdb.org/t/p/w500{row['poster_path']}",
-                                             use_container_width=True)
-                                    with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
-                                        st.markdown(f"**Année :** {int(row['startYear'])}")
-                                        st.markdown(f"**Genres :** {row['genres']}")
-                                        st.markdown(f"**Synopsis :** {row['overview']}")
+                    voir_reco = st.button("🍿 Voir les recommandations",
+                                         key=f"reco_recherche_{film['tconst']}")
+                if voir_reco:
+                    afficher_recommandations(film['titre'], f"recherche_{film['tconst']}")
                 st.divider()
         else:
             st.warning("⚠️ Film non trouvé. Essayez un autre titre.")
@@ -557,19 +544,10 @@ else:
                     st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
                     st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
                     st.markdown(f"**Synopsis :** {film['overview']}")
-                    if st.button("🍿 Voir les recommandations",
-                                 key=f"reco_filtre_{film['tconst']}"):
-                        recommandations = recommander(film['titre'])
-                        if recommandations is not None:
-                            cols = st.columns(7)
-                            for i, (_, row) in enumerate(recommandations.iterrows()):
-                                with cols[i % 7]:
-                                    st.image(f"https://image.tmdb.org/t/p/w500{row['poster_path']}",
-                                             use_container_width=True)
-                                    with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
-                                        st.markdown(f"**Année :** {int(row['startYear'])}")
-                                        st.markdown(f"**Genres :** {row['genres']}")
-                                        st.markdown(f"**Synopsis :** {row['overview']}")
+                    voir_reco = st.button("🍿 Voir les recommandations",
+                                         key=f"reco_filtre_{film['tconst']}")
+                if voir_reco:
+                    afficher_recommandations(film['titre'], f"filtre_{film['tconst']}")
                 st.divider()
 
     afficher_categorie(
