@@ -280,26 +280,41 @@ with st.sidebar:
         with open(nom, "rb") as f:
             return base64.b64encode(f.read()).decode()
 
-    icons = {
-        'accueil': ('Accueil.png', 'Accueil'),
-        'favoris': ('Favoris.png', 'Favoris'),
-        'notifications': ('Notifications.png', 'Notifications'),
-        'profil': ('Profil.png', 'Profil'),
-        'kpi': ('KPI.png', 'KPI')
-    }
+    pages = [
+        ('accueil', 'Accueil.png', 'Accueil'),
+        ('favoris', 'Favoris.png', 'Favoris'),
+        ('notifications', 'Notifications.png', 'Notifications'),
+        ('profil', 'Profil.png', 'Profil'),
+        ('kpi', 'KPI.png', 'KPI')
+    ]
 
-    for page, (fichier, label) in icons.items():
+    for page, fichier, label in pages:
         img = icono_b64(fichier)
-        col_img, col_btn = st.columns([1, 1])
-        with col_img:
-            st.markdown(f'''
+        st.markdown(f'''
+            <div style="text-align:center; margin: 10px 0;">
                 <img src="data:image/png;base64,{img}"
-                style="width:35px; margin-top:8px;">
-            ''', unsafe_allow_html=True)
-        with col_btn:
-            if st.button(label, key=f"btn_{page}",
-                         use_container_width=True):
-                st.session_state['page'] = page
+                style="width:40px; opacity:0.8;"
+                title="{label}">
+            </div>
+        ''', unsafe_allow_html=True)
+        if st.button(f"‎", key=f"btn_{page}",
+                     use_container_width=True,
+                     help=label):
+            st.session_state['page'] = page
+
+# CSS para ocultar el texto del botón
+st.markdown("""
+    <style>
+    [data-testid="stSidebar"] button p {
+        display: none !important;
+    }
+    [data-testid="stSidebar"] button {
+        margin-top: -55px !important;
+        height: 50px !important;
+        opacity: 0 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # ── En-tête toujours visible ──────────────────────────
 col_logo, col_titre = st.columns([1, 8])
