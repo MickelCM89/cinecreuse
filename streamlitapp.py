@@ -106,7 +106,7 @@ def recommander(titre, n=6):
     return df_ml.iloc[indices]
 
 # ── Fonction afficher recommandations ─────────────────
-ddef afficher_recommandations(titre, key):
+def afficher_recommandations(titre, key):
     recommandations = recommander(titre)
     if recommandations is not None:
         st.markdown("#### 🎬 Films similaires")
