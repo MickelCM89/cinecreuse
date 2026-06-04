@@ -130,9 +130,10 @@ def afficher_details(film, key_prefix):
                      key=f"reco_{key_prefix}_{film['tconst']}"):
             recommandations = recommander(film['titre'])
             if recommandations is not None:
-                cols = st.columns(5)
+                cols = st.columns(4)
                 for i, (_, row) in enumerate(recommandations.iterrows()):
-                    with cols[i]:
+                    with cols[i % 4]:
+
                         st.image(f"https://image.tmdb.org/t/p/w500{row['poster_path']}",
                                  use_container_width=True)
                         with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
@@ -523,9 +524,9 @@ else:
                                  key=f"reco_recherche_{film['tconst']}"):
                         recommandations = recommander(film['titre'])
                         if recommandations is not None:
-                            cols = st.columns(5)
+                            cols = st.columns(4)
                             for i, (_, row) in enumerate(recommandations.iterrows()):
-                                with cols[i]:
+                                with cols[i % 4]:
                                     st.image(f"https://image.tmdb.org/t/p/w500{row['poster_path']}",
                                              use_container_width=True)
                                     with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
@@ -554,9 +555,9 @@ else:
                                  key=f"reco_filtre_{film['tconst']}"):
                         recommandations = recommander(film['titre'])
                         if recommandations is not None:
-                            cols = st.columns(5)
+                            cols = st.columns(4)
                             for i, (_, row) in enumerate(recommandations.iterrows()):
-                                with cols[i]:
+                                with cols[i % 4]:
                                     st.image(f"https://image.tmdb.org/t/p/w500{row['poster_path']}",
                                              use_container_width=True)
                                     with st.expander(f"**{row['titre']}** ⭐{row['averageRating']}"):
