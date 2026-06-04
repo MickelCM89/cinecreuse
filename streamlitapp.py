@@ -555,8 +555,10 @@ else:
         st.session_state['films_aleatoires'],
         "aleatoire", "film_aleatoire"
     )
-    top_france = df_films[df_films['production_countries'].str.contains('France', na=False)]\
-    .sort_values('averageRating', ascending=False).head(10)
+    top_france = df_films[
+    df_films['production_countries'].str.contains('France', na=False) &
+    ~df_films['production_countries'].str.contains('United States', na=False)
+    ].sort_values('averageRating', ascending=False).head(10)
     afficher_categorie("🏆 Top France", top_france, "drama", "film_drama")
 
     top_classique = df_films[
