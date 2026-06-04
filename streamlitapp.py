@@ -274,17 +274,30 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ── Sidebar ───────────────────────────────────────────
+# ── Sidebar ───────────────────────────────────────────
 with st.sidebar:
-    if st.button("🏠", help="Accueil", use_container_width=True):
-        st.session_state['page'] = 'accueil'
-    if st.button("❤️", help="Favoris", use_container_width=True):
-        st.session_state['page'] = 'favoris'
-    if st.button("🔔", help="Notifications", use_container_width=True):
-        st.session_state['page'] = 'notifications'
-    if st.button("👤", help="Profil", use_container_width=True):
-        st.session_state['page'] = 'profil'
-    if st.button("📊", help="KPI", use_container_width=True):
-        st.session_state['page'] = 'kpi'
+    def icono_b64(nom):
+        with open(nom, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+
+    icons = {
+        'accueil': icono_b64("Accueil.png"),
+        'favoris': icono_b64("Favoris.png"),
+        'notifications': icono_b64("Notifications.png"),
+        'profil': icono_b64("Profil.png"),
+        'kpi': icono_b64("KPI.png")
+    }
+
+    for page, img in icons.items():
+        if st.button("​", key=f"btn_{page}",
+                     use_container_width=True,
+                     help=page.capitalize()):
+            st.session_state['page'] = page
+        st.markdown(f'''
+            <img src="data:image/png;base64,{img}"
+            style="width:35px; margin-left:22px;
+            margin-top:-45px; display:block;">
+        ''', unsafe_allow_html=True)
 
 # ── En-tête toujours visible ──────────────────────────
 col_logo, col_titre = st.columns([1, 8])
