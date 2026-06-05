@@ -377,7 +377,7 @@ elif st.session_state['page'] == 'kpi':
 
     col_k1, col_k2 = st.columns(2)
     with col_k1:
-        st.markdown("#### 🎭 KPI 1 — Top 10 genres")
+        st.markdown("#### 🎭 Top 10 genres")
         genres_count = df_films['genres'].dropna().str.split(',').explode().str.strip()
         top_genres = genres_count.value_counts().head(10).reset_index()
         top_genres.columns = ['genre', 'nombre']
@@ -392,7 +392,7 @@ elif st.session_state['page'] == 'kpi':
         st.markdown("*Drama et Comedy dominent la production cinématographique mondiale.*")
 
     with col_k2:
-        st.markdown("#### 📅 KPI 2 — Évolution films par décennie")
+        st.markdown("#### 📅  Évolution films par décennie")
         df_decade = df_films.copy()
         df_decade['decennie'] = (df_decade['startYear'] // 10 * 10).astype(int)
         decade_count = df_decade.groupby('decennie').size().reset_index(name='nombre')
@@ -411,7 +411,7 @@ elif st.session_state['page'] == 'kpi':
     st.divider()
     col_k3, col_k4 = st.columns(2)
     with col_k3:
-        st.markdown("#### ⭐ KPI 5 — Distribution des notes IMDb")
+        st.markdown("#### ⭐ Distribution des notes IMDb")
         fig5, ax5 = plt.subplots(figsize=(7, 5))
         style_graph(fig5, ax5, 'Distribution des notes IMDb')
         ax5.hist(df_films['averageRating'].dropna(), bins=20,
@@ -422,7 +422,7 @@ elif st.session_state['page'] == 'kpi':
         st.markdown("*La majorité des films ont une note entre 6 et 7.5.*")
 
     with col_k4:
-        st.markdown("#### 🏆 KPI 6 — Top 10 films les mieux notés")
+        st.markdown("#### 🏆 Top 10 films les mieux notés")
         top_films = df_films[df_films['numVotes'] >= 1000]\
             .sort_values('averageRating', ascending=False).head(10)
         fig6, ax6 = plt.subplots(figsize=(7, 5))
