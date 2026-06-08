@@ -255,15 +255,12 @@ with st.sidebar:
         if clicked:
             st.session_state['page'] = page
             if page == 'accueil':
-                # Limpiar recomendaciones
                 for k in [k for k in st.session_state.keys() if k.startswith('show_reco_')]:
                     del st.session_state[k]
-                # Reset films seleccionados
                 st.session_state['film_aleatoire'] = None
                 st.session_state['film_drama'] = None
                 st.session_state['film_comedie'] = None
                 st.session_state['film_action'] = None
-                # Regenerar todas las categorías
                 generer_categories()
             st.rerun()
         st.markdown(f'''
