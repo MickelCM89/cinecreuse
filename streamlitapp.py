@@ -64,7 +64,8 @@ df_films = charger_données()
 cosine_sim, df_ml = construire_modele(df_films)
 
 # ── Initialiser session_state ─────────────────────────
-for key in ['film_aleatoire', 'film_drama', 'film_comedie', 'film_action', 'page']:
+for key in ['film_aleatoire', 'film_drama', 'film_comedie', 'film_action',
+            'film_france', 'film_classique', 'film_action2', 'page']:
     if key not in st.session_state:
         st.session_state[key] = None
 
@@ -74,6 +75,24 @@ if 'films_aleatoires' not in st.session_state:
 
 if 'favoris' not in st.session_state:
     st.session_state['favoris'] = []
+
+# ── Datasets des catégories ───────────────────────────
+df_france = df_films[
+    df_films['production_countries'].str.contains('France', na=False) &
+    ~df_films['production_countries'].str.contains('United States', na=False) &
+    ~df_films['production_countries'].str.contains('United Kingdom', na=False) &
+    ~df_films['production_countries'].str.contains('Germany', na=False) &
+    ~df_films['production_countries'].str.contains('Italy', na=False) &
+    ~df_films['production_countries'].str.contains('Spain', na=False)
+].dropna(subset=['poster_path']).reset_index(drop=True)
+
+df_classique = df_films[
+    (df_films['startYear'] >= 1950) & (df_films['startYear'] <= 1990)
+].dropna(subset=['poster_path']).reset_index(drop=True)
+
+df_action = df_films[
+    df_films['genres'].str.contains('Action', na=False)
+].dropna(subset=['poster_path']).reset_index(drop=True)
 
 # ── Fonction recommander ──────────────────────────────
 def recommander(titre, n=6):
@@ -243,10 +262,8 @@ with st.sidebar:
             if page == 'accueil':
                 for k in [k for k in st.session_state.keys() if k.startswith('show_reco_')]:
                     del st.session_state[k]
-                st.session_state['film_aleatoire'] = None
-                st.session_state['film_drama'] = None
-                st.session_state['film_comedie'] = None
-                st.session_state['film_action'] = None
+                for k in ['film_aleatoire', 'film_france', 'film_classique', 'film_action2']:
+                    st.session_state[k] = None
                 st.session_state['films_aleatoires'] = df_films.dropna(
                     subset=['poster_path']).sample(10).reset_index(drop=True)
             st.rerun()
@@ -436,28 +453,29 @@ else:
             st.markdown("### 🎬 Résultats")
             afficher_resultats(resultats, "filtre")
 
-    # ── Catégories — générées directement sans session_state ──
     afficher_categorie(
         "🤟 Films à découvrir aujourd'hui",
         st.session_state['films_aleatoires'],
         "aleatoire", "film_aleatoire"
     )
 
-    films_france = df_films[
-        df_films['production_countries'].str.contains('France', na=False) &
-        ~df_films['production_countries'].str.contains('United States', na=False)
-    ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
-    afficher_categorie("🇫🇷 Films Français", films_france, "drama", "film_drama")
+    afficher_categorie(
+        "🇫🇷 Films Français",
+        df_france.sample(min(10, len(df_france))).reset_index(drop=True),
+        "france", "film_france"
+    )
 
-    films_classique = df_films[
-        (df_films['startYear'] >= 1950) & (df_films['startYear'] <= 1990)
-    ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
-    afficher_categorie("🏛 Films Classiques", films_classique, "comedie", "film_comedie")
+    afficher_categorie(
+        "🏛 Films Classiques",
+        df_classique.sample(min(10, len(df_classique))).reset_index(drop=True),
+        "classique", "film_classique"
+    )
 
-    films_action = df_films[
-        df_films['genres'].str.contains('Action', na=False)
-    ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
-    afficher_categorie("🚀 Films Action", films_action, "action", "film_action")
+    afficher_categorie(
+        "🚀 Films Action",
+        df_action.sample(min(10, len(df_action))).reset_index(drop=True),
+        "action2", "film_action2"
+    )
 
 st.divider()
 st.markdown("<center>Wild Code School 2026 — Projet 2</center>", unsafe_allow_html=True)
