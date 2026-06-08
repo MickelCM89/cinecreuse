@@ -92,7 +92,6 @@ df_france = get_df_france(df_films)
 df_classique = get_df_classique(df_films)
 df_action = get_df_action(df_films)
 
-# ── Initialiser session_state ─────────────────────────
 for key in ['film_aleatoire', 'film_france', 'film_classique', 'film_action2', 'page']:
     if key not in st.session_state:
         st.session_state[key] = None
@@ -116,7 +115,6 @@ if 'cat_action2' not in st.session_state:
 if 'favoris' not in st.session_state:
     st.session_state['favoris'] = []
 
-# ── Fonction recommander ──────────────────────────────
 def recommander(titre, n=6):
     resultats = df_ml[
         df_ml['titre'].str.contains(titre, case=False, na=False) |
@@ -244,6 +242,10 @@ st.markdown(f"""
     [data-testid="stTextInput"] > div {{ background-color: rgba(0,0,0,0) !important; border: none !important; }}
     [data-testid="stTextInput"] > div > div {{ background-color: rgba(0,0,0,0) !important; }}
     [data-testid="stTextInput"] input::placeholder {{ color: rgba(255,255,255,0.55) !important; }}
+    [data-testid="stSelectbox"] > div > div {{ background-color: rgba(0,0,0,0) !important; border: 1px solid rgba(255,255,255,0.55) !important; color: white !important; }}
+    [data-testid="stSelectbox"] span {{ color: white !important; }}
+    [data-testid="stSelectbox"] {{ cursor: pointer !important; }}
+    [data-testid="stSelectbox"] * {{ cursor: pointer !important; }}
     [data-testid="stSidebar"] {{ background-color: rgba(0,0,0,0) !important; background: none !important; box-shadow: none !important; border-right: none !important; min-width: 80px !important; max-width: 80px !important; backdrop-filter: blur(4px); }}
     section[data-testid="stSidebar"] > div {{ background-color: rgba(0,0,0,0) !important; background: none !important; }}
     [data-testid="stSidebar"] button {{ background-color: transparent !important; border: none !important; width: 100% !important; padding: 25px 0 !important; height: 70px !important; }}
@@ -420,19 +422,30 @@ elif st.session_state['page'] == 'kpi':
 
 else:
     st.markdown("<br>", unsafe_allow_html=True)
-    film_input = st.text_input("", placeholder="🔍 Rechercher un film, un acteur, un genre...",
-                               label_visibility="collapsed")
+    col_search, col_genre = st.columns([4, 1])
+    with col_search:
+        film_input = st.text_input("", placeholder="🔍 Rechercher un film, un acteur...",
+                                   label_visibility="collapsed")
+    with col_genre:
+        tous_genres = sorted(df_films['genres'].dropna().str.split(',')
+                            .explode().str.strip().unique().tolist())
+        tous_genres.insert(0, "🎭 Tous les genres")
+        genre_selectionne = st.selectbox("", tous_genres, label_visibility="collapsed")
+
+    df_filtre = df_films.copy()
+    if genre_selectionne != "🎭 Tous les genres":
+        df_filtre = df_filtre[df_filtre['genres'].str.contains(genre_selectionne, na=False)]
 
     if film_input:
-        r_titre = df_films[
-            df_films['titre'].str.contains(film_input, case=False, na=False) |
-            df_films['primaryTitle'].str.contains(film_input, case=False, na=False)
+        r_titre = df_filtre[
+            df_filtre['titre'].str.contains(film_input, case=False, na=False) |
+            df_filtre['primaryTitle'].str.contains(film_input, case=False, na=False)
         ]
-        r_acteur = df_films[
-            df_films['acteurs'].fillna('').str.contains(film_input, case=False, na=False)
-        ] if 'acteurs' in df_films.columns else pd.DataFrame()
-        r_genre = df_films[
-            df_films['genres'].str.contains(film_input, case=False, na=False)
+        r_acteur = df_filtre[
+            df_filtre['acteurs'].fillna('').str.contains(film_input, case=False, na=False)
+        ] if 'acteurs' in df_filtre.columns else pd.DataFrame()
+        r_genre = df_filtre[
+            df_filtre['genres'].str.contains(film_input, case=False, na=False)
         ]
         resultats = pd.concat([r_titre, r_acteur, r_genre]).drop_duplicates(
             subset=['tconst']).reset_index(drop=True)
@@ -443,6 +456,12 @@ else:
             afficher_resultats(resultats.head(20), "recherche")
         else:
             st.warning("⚠️ Aucun résultat trouvé. Essayez un autre titre, acteur ou genre.")
+
+    elif genre_selectionne != "🎭 Tous les genres":
+        resultats = df_filtre.sort_values('averageRating', ascending=False).head(20)
+        if not resultats.empty:
+            st.markdown("### 🎬 Résultats")
+            afficher_resultats(resultats, "filtre")
 
     afficher_categorie(
         "🤟 Films à découvrir aujourd'hui",
