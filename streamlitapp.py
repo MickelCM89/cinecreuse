@@ -66,15 +66,16 @@ cosine_sim, df_ml = construire_modele(df_films)
 # ── Datasets des catégories ───────────────────────────
 @st.cache_data
 def get_df_france(df):
-    return df[
-        df['production_countries'].str.contains('France', na=False) &
-        ~df['production_countries'].str.contains('United States', na=False) &
-        ~df['production_countries'].str.contains('United Kingdom', na=False) &
-        ~df['production_countries'].str.contains('Germany', na=False) &
-        ~df['production_countries'].str.contains('Italy', na=False) &
-        ~df['production_countries'].str.contains('Spain', na=False)
-    ].dropna(subset=['poster_path']).reset_index(drop=True)
-
+    pays_a_exclure = [
+        'United States', 'United Kingdom', 'Germany', 'Italy', 'Spain',
+        'Japan', 'China', 'India', 'Australia', 'Canada', 'Brazil',
+        'Mexico', 'Russia', 'South Korea', 'Sweden', 'Denmark',
+        'Netherlands', 'Belgium', 'Switzerland', 'Austria', 'Poland'
+    ]
+    mask = df['production_countries'].str.contains('France', na=False)
+    for pays in pays_a_exclure:
+        mask = mask & ~df['production_countries'].str.contains(pays, na=False)
+    return df[mask].dropna(subset=['poster_path']).reset_index(drop=True)
 @st.cache_data
 def get_df_classique(df):
     return df[
