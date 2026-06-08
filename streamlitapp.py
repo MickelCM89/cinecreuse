@@ -433,53 +433,31 @@ elif st.session_state['page'] == 'kpi':
 
 else:
     st.markdown("<br>", unsafe_allow_html=True)
-    col_search, col_type, col_genre, col_pays = st.columns([3, 1, 1, 1])
-    with col_search:
-        film_input = st.text_input("", placeholder="🔍 Rechercher...", label_visibility="collapsed")
-    with col_type:
-        type_recherche = st.selectbox("", ["🎬 Titre", "🎭 Acteur", "🎪 Genre"], label_visibility="collapsed")
-    with col_genre:
-        tous_genres = sorted(df_films['genres'].dropna().str.split(',').explode().str.strip().unique().tolist())
-        tous_genres.insert(0, "🎭 Tous les genres")
-        genre_selectionne = st.selectbox("", tous_genres, label_visibility="collapsed")
-    with col_pays:
-        tous_pays = sorted(df_films['production_countries'].dropna()
-                          .str.replace("'","").str.replace("[","").str.replace("]","")
-                          .str.split(",").explode().str.strip().unique().tolist())
-        tous_pays = [p for p in tous_pays if p != '']
-        tous_pays.insert(0, "🌍 Tous les pays")
-        pays_selectionne = st.selectbox("", tous_pays, label_visibility="collapsed")
-
-    df_filtre = df_films.copy()
-    if genre_selectionne != "🎭 Tous les genres":
-        df_filtre = df_filtre[df_filtre['genres'].str.contains(genre_selectionne, na=False)]
-    if pays_selectionne != "🌍 Tous les pays":
-        df_filtre = df_filtre[df_filtre['production_countries'].str.contains(pays_selectionne, na=False)]
+    film_input = st.text_input("", placeholder="🔍 Rechercher un film, un acteur, un genre...",
+                                label_visibility="collapsed")
 
     if film_input:
-        if type_recherche == "🎬 Titre":
-            resultats = df_filtre[df_filtre['titre'].str.contains(film_input, case=False, na=False) |
-                                  df_filtre['primaryTitle'].str.contains(film_input, case=False, na=False)]
-            label_recherche = f"titre : **{film_input}**"
-        elif type_recherche == "🎭 Acteur":
-            resultats = df_filtre[df_filtre['acteurs'].str.contains(film_input, case=False, na=False)] if 'acteurs' in df_filtre.columns else pd.DataFrame()
-            label_recherche = f"acteur : **{film_input}**"
-        elif type_recherche == "🎪 Genre":
-            resultats = df_filtre[df_filtre['genres'].str.contains(film_input, case=False, na=False)]
-            label_recherche = f"genre : **{film_input}**"
+        r_titre = df_films[
+            df_films['titre'].str.contains(film_input, case=False, na=False) 
+            df_films['primaryTitle'].str.contains(film_input, case=False, na=False)
+        ]
+        r_acteur = df_films[
+            df_films['acteurs'].str.contains(film_input, case=False, na=False)
+        ] if 'acteurs' in df_films.columns else pd.DataFrame()
+
+        r_genre = df_films[
+            df_films['genres'].str.contains(film_input, case=False, na=False)
+        ]
+
+        resultats = pd.concat([r_titre, r_acteur, r_genre]).drop_duplicates(
+            subset=['tconst']).reset_index(drop=True)
 
         if not resultats.empty:
-            st.success(f"{len(resultats)} film(s) trouvé(s) pour {label_recherche}")
+            st.success(f"{len(resultats)} film(s) trouvé(s) pour **{film_input}**")
             st.markdown("### 🎬 Résultats de recherche")
             afficher_resultats(resultats.head(20), "recherche")
         else:
-            st.warning("⚠️ Aucun résultat trouvé. Essayez un autre terme.")
-
-    elif genre_selectionne != "🎭 Tous les genres" or pays_selectionne != "🌍 Tous les pays":
-        resultats = df_filtre.sort_values('averageRating', ascending=False).head(20)
-        if not resultats.empty:
-            st.markdown("### 🎬 Résultats")
-            afficher_resultats(resultats, "filtre")
+            st.warning("⚠️ Aucun résultat trouvé. Essayez un autre titre, acteur ou genre.")
 
     afficher_categorie(
         "🤟 Films à découvrir aujourd'hui",
