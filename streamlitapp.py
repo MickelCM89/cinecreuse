@@ -63,9 +63,36 @@ def construire_modele(df_films):
 df_films = charger_données()
 cosine_sim, df_ml = construire_modele(df_films)
 
+# ── Datasets des catégories ───────────────────────────
+@st.cache_data
+def get_df_france(df):
+    return df[
+        df['production_countries'].str.contains('France', na=False) &
+        ~df['production_countries'].str.contains('United States', na=False) &
+        ~df['production_countries'].str.contains('United Kingdom', na=False) &
+        ~df['production_countries'].str.contains('Germany', na=False) &
+        ~df['production_countries'].str.contains('Italy', na=False) &
+        ~df['production_countries'].str.contains('Spain', na=False)
+    ].dropna(subset=['poster_path']).reset_index(drop=True)
+
+@st.cache_data
+def get_df_classique(df):
+    return df[
+        (df['startYear'] >= 1950) & (df['startYear'] <= 1990)
+    ].dropna(subset=['poster_path']).reset_index(drop=True)
+
+@st.cache_data
+def get_df_action(df):
+    return df[
+        df['genres'].str.contains('Action', na=False)
+    ].dropna(subset=['poster_path']).reset_index(drop=True)
+
+df_france = get_df_france(df_films)
+df_classique = get_df_classique(df_films)
+df_action = get_df_action(df_films)
+
 # ── Initialiser session_state ─────────────────────────
-for key in ['film_aleatoire', 'film_drama', 'film_comedie', 'film_action',
-            'film_france', 'film_classique', 'film_action2', 'page']:
+for key in ['film_aleatoire', 'film_france', 'film_classique', 'film_action2', 'page']:
     if key not in st.session_state:
         st.session_state[key] = None
 
@@ -73,26 +100,20 @@ if 'films_aleatoires' not in st.session_state:
     st.session_state['films_aleatoires'] = df_films.dropna(
         subset=['poster_path']).sample(10).reset_index(drop=True)
 
+if 'cat_france' not in st.session_state:
+    st.session_state['cat_france'] = df_france.sample(
+        min(10, len(df_france))).reset_index(drop=True)
+
+if 'cat_classique' not in st.session_state:
+    st.session_state['cat_classique'] = df_classique.sample(
+        min(10, len(df_classique))).reset_index(drop=True)
+
+if 'cat_action2' not in st.session_state:
+    st.session_state['cat_action2'] = df_action.sample(
+        min(10, len(df_action))).reset_index(drop=True)
+
 if 'favoris' not in st.session_state:
     st.session_state['favoris'] = []
-
-# ── Datasets des catégories ───────────────────────────
-df_france = df_films[
-    df_films['production_countries'].str.contains('France', na=False) &
-    ~df_films['production_countries'].str.contains('United States', na=False) &
-    ~df_films['production_countries'].str.contains('United Kingdom', na=False) &
-    ~df_films['production_countries'].str.contains('Germany', na=False) &
-    ~df_films['production_countries'].str.contains('Italy', na=False) &
-    ~df_films['production_countries'].str.contains('Spain', na=False)
-].dropna(subset=['poster_path']).reset_index(drop=True)
-
-df_classique = df_films[
-    (df_films['startYear'] >= 1950) & (df_films['startYear'] <= 1990)
-].dropna(subset=['poster_path']).reset_index(drop=True)
-
-df_action = df_films[
-    df_films['genres'].str.contains('Action', na=False)
-].dropna(subset=['poster_path']).reset_index(drop=True)
 
 # ── Fonction recommander ──────────────────────────────
 def recommander(titre, n=6):
@@ -266,6 +287,12 @@ with st.sidebar:
                     st.session_state[k] = None
                 st.session_state['films_aleatoires'] = df_films.dropna(
                     subset=['poster_path']).sample(10).reset_index(drop=True)
+                st.session_state['cat_france'] = df_france.sample(
+                    min(10, len(df_france))).reset_index(drop=True)
+                st.session_state['cat_classique'] = df_classique.sample(
+                    min(10, len(df_classique))).reset_index(drop=True)
+                st.session_state['cat_action2'] = df_action.sample(
+                    min(10, len(df_action))).reset_index(drop=True)
             st.rerun()
         st.markdown(f'''
             <div style="text-align:center;margin-top:-62px;margin-bottom:15px;pointer-events:none;">
@@ -458,22 +485,19 @@ else:
         st.session_state['films_aleatoires'],
         "aleatoire", "film_aleatoire"
     )
-
     afficher_categorie(
         "🇫🇷 Films Français",
-        df_france.sample(min(10, len(df_france))).reset_index(drop=True),
+        st.session_state['cat_france'],
         "france", "film_france"
     )
-
     afficher_categorie(
         "🏛 Films Classiques",
-        df_classique.sample(min(10, len(df_classique))).reset_index(drop=True),
+        st.session_state['cat_classique'],
         "classique", "film_classique"
     )
-
     afficher_categorie(
         "🚀 Films Action",
-        df_action.sample(min(10, len(df_action))).reset_index(drop=True),
+        st.session_state['cat_action2'],
         "action2", "film_action2"
     )
 
