@@ -1,4 +1,4 @@
-import streamlit as st
+-import streamlit as st
 import pandas as pd
 import base64
 import matplotlib.pyplot as plt
@@ -14,7 +14,6 @@ st.set_page_config(page_title="CINÉCREUSE", page_icon="🎬", layout="wide")
 
 YOUTUBE_API_KEY = 'AIzaSyDkKZie4PBfLPnKsfo9hSjMluJOYjNLoS8'
 
-# ── Fonction helper titre ─────────────────────────────
 def get_titre(film):
     try:
         titre = film['titre']
@@ -55,12 +54,23 @@ def charger_données():
         df_films['acteurs'] = ''
     return df_films
 
-    df_films['production_countries'] = df_films['production_countries'].fillna('')
+@st.cache_resource
+def construire_modele(df_films):
+    df_films = df_films.copy()
+    df_films['genres'] = df_films['genres'].fillna('')
+    df_films['overview'] = df_films['overview'].fillna('')
+    df_films['production_countries'] = df_films['production_countries'].fillna('') if 'production_countries' in df_films.columns else ''
+    df_films['startYear'] = pd.to_numeric(df_films['startYear'], errors='coerce').fillna(0)
     df_films['contenu'] = (
         (df_films['genres'] + ' ') * 4 +
         (df_films['production_countries'] + ' ') * 2 +
         df_films['overview']
     )
+    tfidf = TfidfVectorizer(stop_words='english', min_df=2, max_features=5000)
+    tfidf_matrix = tfidf.fit_transform(df_films['contenu'])
+    cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+    scaler = MinMaxScaler()
+    df_films['note_norm'] = scaler.fit_transform(df_films[['averageRating']].fillna(0))
     return cosine_sim, df_films
 
 df_films = charger_données()
