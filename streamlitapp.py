@@ -597,21 +597,25 @@ else:
         "aleatoire", "film_aleatoire"
     )
 
-    top_france = df_films[
-        df_films['production_countries'].str.contains('France', na=False) &
-        ~df_films['production_countries'].str.contains('United States', na=False)
-    ].sort_values('averageRating', ascending=False).head(10)
-    afficher_categorie("🇫🇷 Top Français", top_france, "drama", "film_drama")
+    if 'films_france' not in st.session_state:
+        st.session_state['films_france'] = df_films[
+            df_films['production_countries'].str.contains('France', na=False) &
+            ~df_films['production_countries'].str.contains('United States', na=False)
+        ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
+    afficher_categorie("🕍 Films Français", st.session_state['films_france'], "drama", "film_drama")
 
-    top_classique = df_films[
-        (df_films['startYear'] >= 1950) &
-        (df_films['startYear'] <= 1990)
-    ].sort_values('averageRating', ascending=False).head(10)
-    afficher_categorie("🏛 Top Classique", top_classique, "comedie", "film_comedie")
+    if 'films_classique' not in st.session_state:
+        st.session_state['films_classique'] = df_films[
+            (df_films['startYear'] >= 1950) &
+            (df_films['startYear'] <= 1990)
+        ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
+    afficher_categorie("🏛 Films Classiques", st.session_state['films_classique'], "comedie", "film_comedie")
 
-    top_action = df_films[df_films['genres'].str.contains('Action', na=False)]\
-        .sort_values('averageRating', ascending=False).head(10)
-    afficher_categorie("🚀 Top Action", top_action, "action", "film_action")
+    if 'films_action' not in st.session_state:
+        st.session_state['films_action'] = df_films[
+            df_films['genres'].str.contains('Action', na=False)
+        ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
+    afficher_categorie("🚀 Films Action", st.session_state['films_action'], "action", "film_action")
 
 # ── Pied de page ──────────────────────────────────────
 st.divider()
