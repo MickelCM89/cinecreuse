@@ -487,7 +487,7 @@ else:
         "aleatoire", "film_aleatoire"
     )
     afficher_categorie(
-        "🇫🇷 Films Français",
+        "👑 Films Français",
         st.session_state['cat_france'],
         "france", "film_france"
     )
