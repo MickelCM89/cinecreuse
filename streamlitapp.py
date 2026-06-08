@@ -450,9 +450,22 @@ else:
             afficher_resultats(resultats, "filtre")
 
     afficher_categorie("🤟 Films à découvrir aujourd'hui", st.session_state['films_aleatoires'], "aleatoire", "film_aleatoire")
-    afficher_categorie("🇫🇷 Films Français", st.session_state['cat_france'], "drama", "film_drama")
-    afficher_categorie("🏛 Films Classiques", st.session_state['cat_classique'], "comedie", "film_comedie")
-    afficher_categorie("🚀 Films Action", st.session_state['cat_action'], "action", "film_action")
+
+    films_france = df_films[
+        df_films['production_countries'].str.contains('France', na=False) &
+        ~df_films['production_countries'].str.contains('United States', na=False)
+    ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
+    afficher_categorie("🇫🇷 Films Français", films_france, "drama", "film_drama")
+
+    films_classique = df_films[
+        (df_films['startYear'] >= 1950) & (df_films['startYear'] <= 1990)
+    ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
+    afficher_categorie("🏛 Films Classiques", films_classique, "comedie", "film_comedie")
+
+    films_action = df_films[
+        df_films['genres'].str.contains('Action', na=False)
+    ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
+    afficher_categorie("🚀 Films Action", films_action, "action", "film_action")
 
 st.divider()
 st.markdown("<center>Wild Code School 2026 — Projet 2</center>", unsafe_allow_html=True)
