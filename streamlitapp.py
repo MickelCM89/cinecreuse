@@ -63,7 +63,6 @@ def construire_modele(df_films):
 df_films = charger_données()
 cosine_sim, df_ml = construire_modele(df_films)
 
-# ── Datasets des catégories ───────────────────────────
 @st.cache_data
 def get_df_france(df):
     pays_a_exclure = [
@@ -132,7 +131,6 @@ def recommander(titre, n=6):
     scores = [s for s in scores if s[0] != idx][:n]
     return df_ml.iloc[[i[0] for i in scores]]
 
-# ── Fonction afficher recommandations ─────────────────
 def afficher_recommandations(titre, key):
     recommandations = recommander(titre)
     if recommandations is not None:
@@ -146,7 +144,6 @@ def afficher_recommandations(titre, key):
                     st.markdown(f"**Genres :** {row['genres']}")
                     st.markdown(f"**Synopsis :** {row['overview']}")
 
-# ── Fonction afficher détails ─────────────────────────
 def afficher_details(film, key_prefix):
     col1, col2 = st.columns([1, 4])
     with col1:
@@ -175,7 +172,6 @@ def afficher_details(film, key_prefix):
         afficher_recommandations(film['titre'], f"{key_prefix}_{film['tconst']}")
     st.divider()
 
-# ── Fonction afficher catégorie ───────────────────────
 def afficher_categorie(titre_section, films, key_prefix, session_key):
     st.markdown(f"""
         <h3 style="font-size:35px;background:linear-gradient(45deg,#ff4444,#ff6b35,#ff9500,#ffcc00,#fff000);
@@ -191,7 +187,6 @@ def afficher_categorie(titre_section, films, key_prefix, session_key):
         film = df_films[df_films['tconst'] == st.session_state[session_key]].iloc[0]
         afficher_details(film, key_prefix)
 
-# ── Fonction afficher résultats ───────────────────────
 def afficher_resultats(resultats, key_prefix):
     for _, film in resultats.iterrows():
         col1, col2 = st.columns([1, 4])
@@ -214,7 +209,6 @@ def afficher_resultats(resultats, key_prefix):
             afficher_recommandations(film['titre'], f"{key_prefix}_{film['tconst']}")
         st.divider()
 
-# ── Fonction style graphique ──────────────────────────
 def style_graph(fig, ax, titre):
     BG = '#606060'
     fig.patch.set_facecolor(BG)
@@ -226,7 +220,6 @@ def style_graph(fig, ax, titre):
     for spine in ax.spines.values():
         spine.set_edgecolor((1, 1, 1, 0.2))
 
-# ── CSS ───────────────────────────────────────────────
 with open("logo3.png", "rb") as f:
     logo_base64 = base64.b64encode(f.read()).decode()
 with open("20.jpg", "rb") as f:
@@ -259,7 +252,6 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# ── Sidebar ───────────────────────────────────────────
 with st.sidebar:
     def icono_b64(nom):
         with open(nom, "rb") as f:
@@ -297,7 +289,6 @@ with st.sidebar:
                 <img src="data:image/png;base64,{img}" style="width:38px;">
             </div>''', unsafe_allow_html=True)
 
-# ── En-tête ───────────────────────────────────────────
 col_logo, col_titre = st.columns([1, 8])
 with col_logo:
     st.markdown(f'<img src="data:image/png;base64,{logo_base64}" class="logo-circulaire">', unsafe_allow_html=True)
@@ -308,7 +299,6 @@ with col_titre:
         -webkit-background-clip:text;-webkit-text-fill-color:transparent;
         background-clip:text;margin:0;">CINÉCREUSE</h1>""", unsafe_allow_html=True)
 
-# ── Pages ─────────────────────────────────────────────
 if st.session_state['page'] == 'favoris':
     st.markdown("### ❤️ Mes Favoris")
     if st.session_state['favoris']:
