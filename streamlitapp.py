@@ -47,6 +47,20 @@ def charger_données():
         'poster_path', 'budget', 'revenue',
         'production_countries', 'runtimeMinutes'
     ]].reset_index(drop=True)
+    
+    # Charger acteurs si disponible
+    try:
+        df_acteurs = pd.read_csv('film_artiste.csv', low_memory=False)
+        if 'tconst' in df_acteurs.columns and 'primaryName' in df_acteurs.columns:
+            acteurs_par_film = df_acteurs.groupby('tconst')['primaryName']\
+                .apply(lambda x: ', '.join(x.dropna())).reset_index()
+            acteurs_par_film.columns = ['tconst', 'acteurs']
+            df_films = df_films.merge(acteurs_par_film, on='tconst', how='left')
+        else:
+            df_films['acteurs'] = ''
+    except:
+        df_films['acteurs'] = ''
+    
     return df_films
 
 @st.cache_resource
@@ -134,6 +148,8 @@ def afficher_details(film, key_prefix):
         st.markdown(f"**Genres :** {film['genres']}")
         st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
         st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
+        if 'acteurs' in film and pd.notna(film['acteurs']) and film['acteurs']:
+            st.markdown(f"**Acteurs :** {film['acteurs'][:100]}...")
         st.markdown(f"**Synopsis :** {film['overview']}")
         trailer_url = get_trailer(film['titre'])
         if trailer_url:
@@ -172,6 +188,30 @@ def afficher_categorie(titre_section, films, key_prefix, session_key):
     if session_key in st.session_state and st.session_state[session_key] is not None:
         film = df_films[df_films['tconst'] == st.session_state[session_key]].iloc[0]
         afficher_details(film, key_prefix)
+
+# ── Fonction afficher résultats ───────────────────────
+def afficher_resultats(resultats, key_prefix):
+    for _, film in resultats.iterrows():
+        col1, col2 = st.columns([1, 4])
+        with col1:
+            st.image(f"https://image.tmdb.org/t/p/w500{film['poster_path']}", width=150)
+        with col2:
+            st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
+            st.markdown(f"**Genres :** {film['genres']}")
+            st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
+            st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
+            if 'acteurs' in film and pd.notna(film['acteurs']) and film['acteurs']:
+                st.markdown(f"**Acteurs :** {film['acteurs'][:100]}...")
+            st.markdown(f"**Synopsis :** {film['overview']}")
+            trailer_url = get_trailer(film['titre'])
+            if trailer_url:
+                st.markdown("**🎬 Bande-annonce :**")
+                st.components.v1.iframe(trailer_url, height=450)
+            voir_reco = st.button("🍿 Voir les recommandations",
+                                 key=f"reco_{key_prefix}_{film['tconst']}")
+        if voir_reco:
+            afficher_recommandations(film['titre'], f"{key_prefix}_{film['tconst']}")
+        st.divider()
 
 # ── Fonction style graphique ──────────────────────────
 def style_graph(fig, ax, titre):
@@ -392,7 +432,7 @@ elif st.session_state['page'] == 'kpi':
         st.markdown("*Drama et Comedy dominent la production cinématographique mondiale.*")
 
     with col_k2:
-        st.markdown("#### 📅  Évolution films par décennie")
+        st.markdown("#### 📅 Évolution films par décennie")
         df_decade = df_films.copy()
         df_decade['decennie'] = (df_decade['startYear'] // 10 * 10).astype(int)
         decade_count = df_decade.groupby('decennie').size().reset_index(name='nombre')
@@ -439,7 +479,7 @@ elif st.session_state['page'] == 'kpi':
     st.divider()
     col_k5, col_k6 = st.columns(2)
     with col_k5:
-        st.markdown("#### 🌍 KPI 7 — Top 10 pays de production")
+        st.markdown("#### 🌍 Top 10 pays de production")
         def parse_countries(x):
             try:
                 return ast.literal_eval(x)
@@ -458,7 +498,7 @@ elif st.session_state['page'] == 'kpi':
         st.markdown("*Les États-Unis dominent largement la production mondiale.*")
 
     with col_k6:
-        st.markdown("#### 💰 KPI 8 — Budget vs Recettes")
+        st.markdown("#### 💰 Budget vs Recettes")
         df_budget = df_films[(df_films['budget'] > 0) &
                              (df_films['revenue'] > 0)].copy()
         fig8, ax8 = plt.subplots(figsize=(7, 5))
@@ -471,11 +511,17 @@ elif st.session_state['page'] == 'kpi':
         st.markdown("*Les films à gros budget génèrent généralement plus de recettes.*")
 
 else:
+    # ── Barre de recherche ────────────────────────────
     st.markdown("<br>", unsafe_allow_html=True)
-    col_search, col_genre, col_pays = st.columns([3, 1, 1])
+    col_search, col_type, col_genre, col_pays = st.columns([3, 1, 1, 1])
+
     with col_search:
-        film_input = st.text_input("", placeholder="🔍 Rechercher un film...",
+        film_input = st.text_input("", placeholder="🔍 Rechercher...",
                                     label_visibility="collapsed")
+    with col_type:
+        type_recherche = st.selectbox("", [
+            "🎬 Titre", "🎭 Acteur", "🎪 Genre"
+        ], label_visibility="collapsed")
     with col_genre:
         tous_genres = sorted(df_films['genres'].dropna().str.split(',')
                             .explode().str.strip().unique().tolist())
@@ -492,6 +538,7 @@ else:
         pays_selectionne = st.selectbox("", tous_pays,
                                          label_visibility="collapsed")
 
+    # ── Filtrer ───────────────────────────────────────
     df_filtre = df_films.copy()
     if genre_selectionne != "🎭 Tous les genres":
         df_filtre = df_filtre[df_filtre['genres'].str.contains(
@@ -500,72 +547,61 @@ else:
         df_filtre = df_filtre[df_filtre['production_countries'].str.contains(
                               pays_selectionne, na=False)]
 
+    # ── Résultats ─────────────────────────────────────
     if film_input:
-        resultats = df_filtre[
-            df_filtre['titre'].str.contains(film_input, case=False, na=False) |
-            df_filtre['primaryTitle'].str.contains(film_input, case=False, na=False)
-        ]
+        if type_recherche == "🎬 Titre":
+            resultats = df_filtre[
+                df_filtre['titre'].str.contains(film_input, case=False, na=False) |
+                df_filtre['primaryTitle'].str.contains(film_input, case=False, na=False)
+            ]
+            label_recherche = f"titre : **{film_input}**"
+
+        elif type_recherche == "🎭 Acteur":
+            if 'acteurs' in df_filtre.columns:
+                resultats = df_filtre[
+                    df_filtre['acteurs'].str.contains(film_input, case=False, na=False)
+                ]
+            else:
+                resultats = pd.DataFrame()
+            label_recherche = f"acteur : **{film_input}**"
+
+        elif type_recherche == "🎪 Genre":
+            resultats = df_filtre[
+                df_filtre['genres'].str.contains(film_input, case=False, na=False)
+            ]
+            label_recherche = f"genre : **{film_input}**"
+
         if not resultats.empty:
-            st.success(f"{len(resultats)} film(s) trouvé(s) pour : **{film_input}**")
+            st.success(f"{len(resultats)} film(s) trouvé(s) pour {label_recherche}")
             st.markdown("### 🎬 Résultats de recherche")
-            for _, film in resultats.iterrows():
-                col1, col2 = st.columns([1, 4])
-                with col1:
-                    st.image(f"https://image.tmdb.org/t/p/w500{film['poster_path']}", width=150)
-                with col2:
-                    st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
-                    st.markdown(f"**Genres :** {film['genres']}")
-                    st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
-                    st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
-                    st.markdown(f"**Synopsis :** {film['overview']}")
-                    trailer_url = get_trailer(film['titre'])
-                    if trailer_url:
-                        st.markdown("**🎬 Bande-annonce :**")
-                        st.components.v1.iframe(trailer_url, height=450)
-                    voir_reco = st.button("🍿 Voir les recommandations",
-                                         key=f"reco_recherche_{film['tconst']}")
-                if voir_reco:
-                    afficher_recommandations(film['titre'], f"recherche_{film['tconst']}")
-                st.divider()
+            afficher_resultats(resultats.head(20), "recherche")
         else:
-            st.warning("⚠️ Film non trouvé. Essayez un autre titre.")
+            st.warning("⚠️ Aucun résultat trouvé. Essayez un autre terme.")
 
     elif genre_selectionne != "🎭 Tous les genres" or pays_selectionne != "🌍 Tous les pays":
         resultats = df_filtre.sort_values('averageRating', ascending=False).head(20)
         if not resultats.empty:
             st.markdown("### 🎬 Résultats")
-            for _, film in resultats.iterrows():
-                col1, col2 = st.columns([1, 4])
-                with col1:
-                    st.image(f"https://image.tmdb.org/t/p/w500{film['poster_path']}", width=150)
-                with col2:
-                    st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
-                    st.markdown(f"**Genres :** {film['genres']}")
-                    st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
-                    st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
-                    st.markdown(f"**Synopsis :** {film['overview']}")
-                    voir_reco = st.button("🍿 Voir les recommandations",
-                                         key=f"reco_filtre_{film['tconst']}")
-                if voir_reco:
-                    afficher_recommandations(film['titre'], f"filtre_{film['tconst']}")
-                st.divider()
+            afficher_resultats(resultats, "filtre")
 
+    # ── Catégories ────────────────────────────────────
     afficher_categorie(
         "🤟 Films à découvrir aujourd'hui",
         st.session_state['films_aleatoires'],
         "aleatoire", "film_aleatoire"
     )
+
     top_france = df_films[
-    df_films['production_countries'].str.contains('France', na=False) &
-    ~df_films['production_countries'].str.contains('United States', na=False)
+        df_films['production_countries'].str.contains('France', na=False) &
+        ~df_films['production_countries'].str.contains('United States', na=False)
     ].sort_values('averageRating', ascending=False).head(10)
-    afficher_categorie("🏆 Top Français", top_france, "drama", "film_drama")
+    afficher_categorie("🇫🇷 Top Français", top_france, "drama", "film_drama")
 
     top_classique = df_films[
-    (df_films['startYear'] >= 1950) & 
-    (df_films['startYear'] <= 1990)
+        (df_films['startYear'] >= 1950) &
+        (df_films['startYear'] <= 1990)
     ].sort_values('averageRating', ascending=False).head(10)
-    afficher_categorie("🏛 Top Classique", top_classique, "comedie", "film_comedie")  
+    afficher_categorie("🏛 Top Classique", top_classique, "comedie", "film_comedie")
 
     top_action = df_films[df_films['genres'].str.contains('Action', na=False)]\
         .sort_values('averageRating', ascending=False).head(10)
