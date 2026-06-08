@@ -349,13 +349,16 @@ with st.sidebar:
                 for key in list(st.session_state.keys()):
                     if key.startswith('show_reco_'):
                         del st.session_state[key]
-                st.session_state['film_aleatoire'] = None
-                st.session_state['film_drama'] = None
-                st.session_state['film_comedie'] = None
-                st.session_state['film_action'] = None
-                st.session_state['films_aleatoires'] = df_films.dropna(
-                    subset=['poster_path']).sample(10).reset_index(drop=True)
-                st.rerun()
+            st.session_state['film_aleatoire'] = None
+            st.session_state['film_drama'] = None
+            st.session_state['film_comedie'] = None
+            st.session_state['film_action'] = None
+            st.session_state['films_aleatoires'] = df_films.dropna(
+                subset=['poster_path']).sample(10).reset_index(drop=True)
+            st.session_state.pop('films_france', None)
+            st.session_state.pop('films_classique', None)
+            st.session_state.pop('films_action', None)
+            st.rerun()
         st.markdown(f'''
             <div style="
                 text-align:center;
