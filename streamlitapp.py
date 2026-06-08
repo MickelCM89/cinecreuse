@@ -429,7 +429,7 @@ else:
             df_films['primaryTitle'].str.contains(film_input, case=False, na=False)
         ]
         r_acteur = df_films[
-            df_films['acteurs'].str.contains(film_input, case=False, na=False)
+            df_films['acteurs'].fillna('').str.contains(film_input, case=False, na=False)
         ] if 'acteurs' in df_films.columns else pd.DataFrame()
         r_genre = df_films[
             df_films['genres'].str.contains(film_input, case=False, na=False)
