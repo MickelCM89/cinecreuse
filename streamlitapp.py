@@ -479,7 +479,7 @@ else:
         st.session_state['films_aleatoires'],
         "aleatoire", "film_aleatoire"
     )
-    afficher_categorie(
+    afficher_categorie( 
         "👑 Films Français",
         st.session_state['cat_france'],
         "france", "film_france"
