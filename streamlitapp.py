@@ -485,4 +485,4 @@ else:
     )
 
 st.divider()
-st.markdown("<center>Wild Code School 2026 — Projet 2</center>", unsafe_allow_html=True)
+st.markdown("<center>Wild Code School 2026 — Projet 2</center>", unsafe_allow_html=True)# update
