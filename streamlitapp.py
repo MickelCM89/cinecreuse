@@ -47,8 +47,6 @@ def charger_données():
         'poster_path', 'budget', 'revenue',
         'production_countries', 'runtimeMinutes'
     ]].reset_index(drop=True)
-    
-    # Charger acteurs si disponible
     try:
         df_acteurs = pd.read_csv('film_artiste.csv', low_memory=False)
         if 'tconst' in df_acteurs.columns and 'primaryName' in df_acteurs.columns:
@@ -60,7 +58,6 @@ def charger_données():
             df_films['acteurs'] = ''
     except:
         df_films['acteurs'] = ''
-    
     return df_films
 
 @st.cache_resource
@@ -348,6 +345,17 @@ with st.sidebar:
         )
         if clicked:
             st.session_state['page'] = page
+            if page == 'accueil':
+                for key in list(st.session_state.keys()):
+                    if key.startswith('show_reco_'):
+                        del st.session_state[key]
+                st.session_state['film_aleatoire'] = None
+                st.session_state['film_drama'] = None
+                st.session_state['film_comedie'] = None
+                st.session_state['film_action'] = None
+                st.session_state['films_aleatoires'] = df_films.dropna(
+                    subset=['poster_path']).sample(10).reset_index(drop=True)
+                st.rerun()
         st.markdown(f'''
             <div style="
                 text-align:center;
@@ -511,7 +519,6 @@ elif st.session_state['page'] == 'kpi':
         st.markdown("*Les films à gros budget génèrent généralement plus de recettes.*")
 
 else:
-    # ── Barre de recherche ────────────────────────────
     st.markdown("<br>", unsafe_allow_html=True)
     col_search, col_type, col_genre, col_pays = st.columns([3, 1, 1, 1])
 
@@ -538,7 +545,6 @@ else:
         pays_selectionne = st.selectbox("", tous_pays,
                                          label_visibility="collapsed")
 
-    # ── Filtrer ───────────────────────────────────────
     df_filtre = df_films.copy()
     if genre_selectionne != "🎭 Tous les genres":
         df_filtre = df_filtre[df_filtre['genres'].str.contains(
@@ -547,7 +553,6 @@ else:
         df_filtre = df_filtre[df_filtre['production_countries'].str.contains(
                               pays_selectionne, na=False)]
 
-    # ── Résultats ─────────────────────────────────────
     if film_input:
         if type_recherche == "🎬 Titre":
             resultats = df_filtre[
@@ -555,7 +560,6 @@ else:
                 df_filtre['primaryTitle'].str.contains(film_input, case=False, na=False)
             ]
             label_recherche = f"titre : **{film_input}**"
-
         elif type_recherche == "🎭 Acteur":
             if 'acteurs' in df_filtre.columns:
                 resultats = df_filtre[
@@ -564,7 +568,6 @@ else:
             else:
                 resultats = pd.DataFrame()
             label_recherche = f"acteur : **{film_input}**"
-
         elif type_recherche == "🎪 Genre":
             resultats = df_filtre[
                 df_filtre['genres'].str.contains(film_input, case=False, na=False)
@@ -584,7 +587,6 @@ else:
             st.markdown("### 🎬 Résultats")
             afficher_resultats(resultats, "filtre")
 
-    # ── Catégories ────────────────────────────────────
     afficher_categorie(
         "🤟 Films à découvrir aujourd'hui",
         st.session_state['films_aleatoires'],
