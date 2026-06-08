@@ -76,6 +76,7 @@ def get_df_france(df):
     for pays in pays_a_exclure:
         mask = mask & ~df['production_countries'].str.contains(pays, na=False)
     return df[mask].dropna(subset=['poster_path']).reset_index(drop=True)
+
 @st.cache_data
 def get_df_classique(df):
     return df[
@@ -246,14 +247,10 @@ st.markdown(f"""
     iframe {{ border-radius: 20px !important; overflow: hidden; }}
     .logo-circulaire {{ width: 150px; height: 150px; border-radius: 50%; object-fit: cover; animation: girar 8s linear infinite; }}
     @keyframes girar {{ from {{ transform: rotate(0deg); }} to {{ transform: rotate(360deg); }} }}
-    [data-testid="stTextInput"] input {{ background-color: rgba(0,0,0,0) !important; border: 1px solid rgba(255,255,255,0.55) !important; color: white !important; }}
+    [data-testid="stTextInput"] input {{ background-color: rgba(0,0,0,0) !important; border: 1px solid rgba(255,255,255,0.55) !important; color: white !important; width: 100% !important; }}
     [data-testid="stTextInput"] > div {{ background-color: rgba(0,0,0,0) !important; border: none !important; }}
     [data-testid="stTextInput"] > div > div {{ background-color: rgba(0,0,0,0) !important; }}
     [data-testid="stTextInput"] input::placeholder {{ color: rgba(255,255,255,0.55) !important; }}
-    [data-testid="stSelectbox"] > div > div {{ background-color: rgba(0,0,0,0) !important; border: 1px solid rgba(255,255,255,0.55) !important; color: white !important; }}
-    [data-testid="stSelectbox"] span {{ color: white !important; }}
-    [data-testid="stSelectbox"] {{ cursor: pointer !important; }}
-    [data-testid="stSelectbox"] * {{ cursor: pointer !important; }}
     [data-testid="stSidebar"] {{ background-color: rgba(0,0,0,0) !important; background: none !important; box-shadow: none !important; border-right: none !important; min-width: 80px !important; max-width: 80px !important; backdrop-filter: blur(4px); }}
     section[data-testid="stSidebar"] > div {{ background-color: rgba(0,0,0,0) !important; background: none !important; }}
     [data-testid="stSidebar"] button {{ background-color: transparent !important; border: none !important; width: 100% !important; padding: 25px 0 !important; height: 70px !important; }}
@@ -434,21 +431,19 @@ elif st.session_state['page'] == 'kpi':
 else:
     st.markdown("<br>", unsafe_allow_html=True)
     film_input = st.text_input("", placeholder="🔍 Rechercher un film, un acteur, un genre...",
-                                label_visibility="collapsed")
+                               label_visibility="collapsed")
 
     if film_input:
         r_titre = df_films[
-            df_films['titre'].str.contains(film_input, case=False, na=False) 
+            df_films['titre'].str.contains(film_input, case=False, na=False) |
             df_films['primaryTitle'].str.contains(film_input, case=False, na=False)
         ]
         r_acteur = df_films[
             df_films['acteurs'].str.contains(film_input, case=False, na=False)
         ] if 'acteurs' in df_films.columns else pd.DataFrame()
-
         r_genre = df_films[
             df_films['genres'].str.contains(film_input, case=False, na=False)
         ]
-
         resultats = pd.concat([r_titre, r_acteur, r_genre]).drop_duplicates(
             subset=['tconst']).reset_index(drop=True)
 
