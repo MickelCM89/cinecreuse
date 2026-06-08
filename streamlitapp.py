@@ -63,28 +63,14 @@ def construire_modele(df_films):
 df_films = charger_données()
 cosine_sim, df_ml = construire_modele(df_films)
 
-# ── Fonction pour générer les catégories ──────────────
-def generer_categories():
-    st.session_state['films_aleatoires'] = df_films.dropna(
-        subset=['poster_path']).sample(10).reset_index(drop=True)
-    st.session_state['cat_france'] = df_films[
-        df_films['production_countries'].str.contains('France', na=False) &
-        ~df_films['production_countries'].str.contains('United States', na=False)
-    ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
-    st.session_state['cat_classique'] = df_films[
-        (df_films['startYear'] >= 1950) & (df_films['startYear'] <= 1990)
-    ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
-    st.session_state['cat_action'] = df_films[
-        df_films['genres'].str.contains('Action', na=False)
-    ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
-
 # ── Initialiser session_state ─────────────────────────
 for key in ['film_aleatoire', 'film_drama', 'film_comedie', 'film_action', 'page']:
     if key not in st.session_state:
         st.session_state[key] = None
 
 if 'films_aleatoires' not in st.session_state:
-    generer_categories()
+    st.session_state['films_aleatoires'] = df_films.dropna(
+        subset=['poster_path']).sample(10).reset_index(drop=True)
 
 if 'favoris' not in st.session_state:
     st.session_state['favoris'] = []
@@ -252,19 +238,18 @@ with st.sidebar:
     for page, fichier, label in pages:
         img = icono_b64(fichier)
         clicked = st.button("​", key=f"btn_{page}", use_container_width=True, help=label)
-        def generer_categories():
-    st.session_state['films_aleatoires'] = df_films.dropna(
-        subset=['poster_path']).sample(10).reset_index(drop=True)
-    st.session_state['cat_france'] = df_films[
-        df_films['production_countries'].str.contains('France', na=False) &
-        ~df_films['production_countries'].str.contains('United States', na=False)
-    ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
-    st.session_state['cat_classique'] = df_films[
-        (df_films['startYear'] >= 1950) & (df_films['startYear'] <= 1990)
-    ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
-    st.session_state['cat_action'] = df_films[
-        df_films['genres'].str.contains('Action', na=False)
-    ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
+        if clicked:
+            st.session_state['page'] = page
+            if page == 'accueil':
+                for k in [k for k in st.session_state.keys() if k.startswith('show_reco_')]:
+                    del st.session_state[k]
+                st.session_state['film_aleatoire'] = None
+                st.session_state['film_drama'] = None
+                st.session_state['film_comedie'] = None
+                st.session_state['film_action'] = None
+                st.session_state['films_aleatoires'] = df_films.dropna(
+                    subset=['poster_path']).sample(10).reset_index(drop=True)
+            st.rerun()
         st.markdown(f'''
             <div style="text-align:center;margin-top:-62px;margin-bottom:15px;pointer-events:none;">
                 <img src="data:image/png;base64,{img}" style="width:38px;">
@@ -451,10 +436,28 @@ else:
             st.markdown("### 🎬 Résultats")
             afficher_resultats(resultats, "filtre")
 
-    afficher_categorie("🤟 Films à découvrir aujourd'hui", st.session_state['films_aleatoires'], "aleatoire", "film_aleatoire")
-    afficher_categorie("🕍 Films Français", st.session_state['cat_france'], "drama", "film_drama")
-    afficher_categorie("🏛 Films Classiques", st.session_state['cat_classique'], "comedie", "film_comedie")
-    afficher_categorie("🚀 Films Action", st.session_state['cat_action'], "action", "film_action")
+    # ── Catégories — générées directement sans session_state ──
+    afficher_categorie(
+        "🤟 Films à découvrir aujourd'hui",
+        st.session_state['films_aleatoires'],
+        "aleatoire", "film_aleatoire"
+    )
+
+    films_france = df_films[
+        df_films['production_countries'].str.contains('France', na=False) &
+        ~df_films['production_countries'].str.contains('United States', na=False)
+    ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
+    afficher_categorie("🇫🇷 Films Français", films_france, "drama", "film_drama")
+
+    films_classique = df_films[
+        (df_films['startYear'] >= 1950) & (df_films['startYear'] <= 1990)
+    ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
+    afficher_categorie("🏛 Films Classiques", films_classique, "comedie", "film_comedie")
+
+    films_action = df_films[
+        df_films['genres'].str.contains('Action', na=False)
+    ].dropna(subset=['poster_path']).sample(10).reset_index(drop=True)
+    afficher_categorie("🚀 Films Action", films_action, "action", "film_action")
 
 st.divider()
 st.markdown("<center>Wild Code School 2026 — Projet 2</center>", unsafe_allow_html=True)
