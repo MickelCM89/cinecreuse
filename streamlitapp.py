@@ -393,13 +393,17 @@ if st.session_state['page'] == 'favoris':
     if st.session_state['favoris']:
         films_favoris = df_films[df_films['tconst'].isin(st.session_state['favoris'])]
         for _, film in films_favoris.iterrows():
-            col1, col2 = st.columns([1, 4])
+            col1, col2, col3 = st.columns([1, 4, 1])
             with col1:
                 st.image(f"https://image.tmdb.org/t/p/w500{film['poster_path']}", width=150)
             with col2:
                 st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
                 st.markdown(f"**Genres :** {film['genres']}")
                 st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
+            with col3:
+                if st.button("🗑️ Retirer", key=f"retirer_{film['tconst']}"):
+                    st.session_state['favoris'].remove(film['tconst'])
+                    st.rerun()
             st.divider()
     else:
         st.info("Aucun favori. Ajoutez des films depuis l'accueil!")
