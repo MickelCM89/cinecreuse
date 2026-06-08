@@ -157,7 +157,7 @@ def afficher_details(film, key_prefix):
     with col2:
         st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
         st.markdown(f"**Genres :** {film['genres']}")
-        st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
+        st.markdown(f"**Note:** ⭐ {film['averageRating']}")
         st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
         if 'acteurs' in film and pd.notna(film['acteurs']) and film['acteurs']:
             st.markdown(f"**Acteurs :** {film['acteurs'][:100]}...")
@@ -199,7 +199,7 @@ def afficher_resultats(resultats, key_prefix):
         with col2:
             st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
             st.markdown(f"**Genres :** {film['genres']}")
-            st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
+            st.markdown(f"**Note:** ⭐ {film['averageRating']}")
             st.markdown(f"**Durée :** {int(film['runtimeMinutes'])} min")
             if 'acteurs' in film and pd.notna(film['acteurs']) and film['acteurs']:
                 st.markdown(f"**Acteurs :** {film['acteurs'][:100]}...")
@@ -323,7 +323,7 @@ if st.session_state['page'] == 'favoris':
             with col2:
                 st.markdown(f"### {film['titre']} ({int(film['startYear'])})")
                 st.markdown(f"**Genres :** {film['genres']}")
-                st.markdown(f"**Note IMDb :** ⭐ {film['averageRating']}")
+                st.markdown(f"**Note:** ⭐ {film['averageRating']}")
             with col3:
                 if st.button("🗑️ Retirer", key=f"retirer_{film['tconst']}"):
                     st.session_state['favoris'].remove(film['tconst'])
