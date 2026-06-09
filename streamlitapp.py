@@ -63,8 +63,9 @@ def construire_modele(df_films):
     df_films['startYear'] = pd.to_numeric(df_films['startYear'], errors='coerce').fillna(0)
     df_films['contenu'] = (
         (df_films['genres'] + ' ') * 4 +
-        (df_films['production_countries'] + ' ') * 2 +
+        (df_films['production_countries'] + ' ') * 4 +
         df_films['overview']
+    
     )
     tfidf = TfidfVectorizer(stop_words='english', min_df=2, max_features=5000)
     tfidf_matrix = tfidf.fit_transform(df_films['contenu'])
