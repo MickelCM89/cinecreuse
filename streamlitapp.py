@@ -136,10 +136,21 @@ def recommander(titre, n=6):
         return None
     film = resultats.iloc[0]
     idx = film.name
+    pays_film = str(film['production_countries']) if pd.notna(film['production_countries']) else ''
+
     scores_final = 0.8 * cosine_sim[idx] + 0.2 * df_ml['note_norm'].values
     scores = sorted(enumerate(scores_final), key=lambda x: x[1], reverse=True)
-    scores = [s for s in scores if s[0] != idx][:n]
-    return df_ml.iloc[[i[0] for i in scores]]
+    scores = [s for s in scores if s[0] != idx]
+
+    pays_asiatiques = ['Japan', 'China', 'South Korea', 'India', 'Hong Kong', 'Thailand']
+
+    if not any(p in pays_film for p in pays_asiatiques):
+        scores = [
+            s for s in scores
+            if not any(p in str(df_ml.iloc[s[0]]['production_countries']) for p in pays_asiatiques)
+        ]
+
+    return df_ml.iloc[[i[0] for i in scores[:n]]]
 
 def afficher_recommandations(titre, key):
     recommandations = recommander(titre)
