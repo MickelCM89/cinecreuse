@@ -144,11 +144,15 @@ def recommander(titre, n=6):
 
     pays_asiatiques = ['Japan', 'China', 'South Korea', 'India', 'Hong Kong', 'Thailand']
 
+    # Filtrar solo si el film buscado NO es asiático
     if not any(p in pays_film for p in pays_asiatiques):
-        scores = [
+        scores_filtres = [
             s for s in scores
             if not any(p in str(df_ml.iloc[s[0]]['production_countries']) for p in pays_asiatiques)
         ]
+        # Si quedan suficientes resultados usar el filtro, si no usar todos
+        if len(scores_filtres) >= n:
+            scores = scores_filtres
 
     return df_ml.iloc[[i[0] for i in scores[:n]]]
 
