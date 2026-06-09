@@ -39,7 +39,7 @@ def charger_données():
     df_films = df.drop_duplicates(subset=['tconst'])[[
         'tconst', 'primaryTitle', 'titre', 'startYear', 'genres',
         'averageRating', 'numVotes', 'overview', 'poster_path',
-        'budget', 'revenue', 'production_countries', 'runtimeMinutes'
+        'budget', 'revenue', 'production_countries', 'runtimeMinutes', 'region'
     ]].reset_index(drop=True)
     try:
         df_acteurs = pd.read_csv('film_artiste.csv', low_memory=False)
@@ -61,9 +61,11 @@ def construire_modele(df_films):
     df_films['overview'] = df_films['overview'].fillna('')
     df_films['production_countries'] = df_films['production_countries'].fillna('') if 'production_countries' in df_films.columns else ''
     df_films['startYear'] = pd.to_numeric(df_films['startYear'], errors='coerce').fillna(0)
+    df_films['region'] = df_films['region'].fillna('Occidental') if 'region' in df_films.columns else 'Occidental'
     df_films['contenu'] = (
         (df_films['genres'] + ' ') * 4 +
-        (df_films['production_countries'] + ' ') * 2 +
+        (df_films['production_countries'] + ' ') * 4 +
+        (df_films['region'] + ' ') * 3 +
         df_films['overview']
     )
     tfidf = TfidfVectorizer(stop_words='english', min_df=2, max_features=5000)
