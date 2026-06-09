@@ -63,9 +63,8 @@ def construire_modele(df_films):
     df_films['startYear'] = pd.to_numeric(df_films['startYear'], errors='coerce').fillna(0)
     df_films['contenu'] = (
         (df_films['genres'] + ' ') * 4 +
-        (df_films['production_countries'] + ' ') * 4 +
+        (df_films['production_countries'] + ' ') * 2 +
         df_films['overview']
-    
     )
     tfidf = TfidfVectorizer(stop_words='english', min_df=2, max_features=5000)
     tfidf_matrix = tfidf.fit_transform(df_films['contenu'])
@@ -136,25 +135,10 @@ def recommander(titre, n=6):
         return None
     film = resultats.iloc[0]
     idx = film.name
-    pays_film = str(film['production_countries']) if pd.notna(film['production_countries']) else ''
-
     scores_final = 0.8 * cosine_sim[idx] + 0.2 * df_ml['note_norm'].values
     scores = sorted(enumerate(scores_final), key=lambda x: x[1], reverse=True)
-    scores = [s for s in scores if s[0] != idx]
-
-    pays_asiatiques = ['Japan', 'China', 'South Korea', 'India', 'Hong Kong', 'Thailand']
-
-    # Filtrar solo si el film buscado NO es asiático
-    if not any(p in pays_film for p in pays_asiatiques):
-        scores_filtres = [
-            s for s in scores
-            if not any(p in str(df_ml.iloc[s[0]]['production_countries']) for p in pays_asiatiques)
-        ]
-        # Si quedan suficientes resultados usar el filtro, si no usar todos
-        if len(scores_filtres) >= n:
-            scores = scores_filtres
-
-    return df_ml.iloc[[i[0] for i in scores[:n]]]
+    scores = [s for s in scores if s[0] != idx][:n]
+    return df_ml.iloc[[i[0] for i in scores]]
 
 def afficher_recommandations(titre, key):
     recommandations = recommander(titre)
