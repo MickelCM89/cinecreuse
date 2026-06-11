@@ -1,6 +1,6 @@
 # 🎬 CinéCreuse
 
-Application de recommandation de films développée pour le cinéma de la Creuse (France).  
+Application de recommandation de films développée pour le cinéma de la Creuse (France). 
 🔗 **[Accéder à l'application](https://cinecreuse.streamlit.app)**
 
 ---
